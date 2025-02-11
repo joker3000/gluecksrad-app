@@ -1,6 +1,6 @@
 const firstnameInput = document.getElementById('firstname');
 const lastnameInput = document.getElementById('lastname');
-// registerBtn => Klick handled by form submission => see index.html
+// Der Button registerBtn => handled by form => see index.html
 
 const gameArea = document.getElementById('gameArea');
 const infoText = document.getElementById('infoText');
@@ -14,22 +14,21 @@ const totalPointsDisplay = document.getElementById('totalPoints');
 const canvas = document.getElementById('wheel');
 const ctx = canvas.getContext('2d');
 
-// SPIELZUSTAND
+/** SPIELZUSTAND */
 let playerId = null;
 let spins = [];
 let total = 0;
 let currentSpinNumber = 1;
 
-// RAD
-let angle = 0;    // 0° = rechts
-let velocity = 0; // grad/frame
+let angle = 0;       // 0° => rechts
+let velocity = 0;    
 let spinning = false;
 let stopping = false;
 
-// MARKER => roter Kreis => segmentIndex
+/** MARKER => roter Punkt => index */
 let markerIndex = null;
 
-// Animation
+//-------------------------- ANIMATION LOOP ----------------------------
 function animate() {
   requestAnimationFrame(animate);
   if(spinning) {
@@ -39,26 +38,24 @@ function animate() {
   ctx.translate(200,200);
   ctx.rotate(angle*Math.PI/180);
   ctx.translate(-200,-200);
-
   drawWheel();
   ctx.restore();
 }
 animate();
 
 function drawWheel() {
-  const spinObj = spins.find(s => s.spinNumber===currentSpinNumber);
+  const spinObj = spins.find(s => s.spinNumber === currentSpinNumber);
   if(!spinObj) {
     ctx.clearRect(0,0,400,400);
     return;
   }
   const distribution = spinObj.distribution;
-  if(!distribution) {
+  if(!distribution){
     ctx.clearRect(0,0,400,400);
     return;
   }
-
-  const segCount = distribution.length; //16
-  const segAngle = 2*Math.PI/ segCount;
+  const segCount= distribution.length; //16
+  const segAngle= 2*Math.PI/ segCount;
 
   ctx.clearRect(0,0,400,400);
   ctx.font="bold 20px sans-serif";
@@ -87,7 +84,7 @@ function drawWheel() {
   drawSegmentBoundaries(segCount);
 
   // Marker
-  if(markerIndex!==null && markerIndex<segCount) {
+  if(markerIndex!==null && markerIndex<segCount){
     ctx.save();
     ctx.translate(200,200);
     ctx.rotate(markerIndex*segAngle + segAngle/2);
@@ -102,7 +99,7 @@ function drawWheel() {
   }
 }
 
-function drawSegmentBoundaries(segCount){
+function drawSegmentBoundaries(segCount) {
   const segAngle= 2*Math.PI/ segCount;
   ctx.save();
   ctx.translate(200,200);
@@ -120,20 +117,19 @@ function drawSegmentBoundaries(segCount){
 }
 
 function randomColor(i){
-  const base=["red","blue","green","orange","purple","yellow","cyan","pink"];
+  const base= ["red","blue","green","orange","purple","yellow","cyan","pink"];
   return base[i % base.length];
 }
 
-// --- SPIEL-FUNKTIONEN ---
-
-// Registrieren
+//------------------------- SPIEL-FUNKTIONEN ----------------------------
 function registerPlayer(){
   const fname= firstnameInput.value.trim();
   const lname= lastnameInput.value.trim();
-  if(!fname || !lname){
+  if(!fname||!lname){
     alert('Bitte Vor- und Nachnamen eingeben!');
     return;
   }
+
   fetch('/api/register',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -158,11 +154,11 @@ function registerPlayer(){
 }
 
 function initSpinUI(){
-  const unfinished= spins.find(s=> s.value===null);
+  const unfinished= spins.find(s=>s.value===null);
   if(!unfinished){
     currentSpinNumber=4;
     updateSpinDisplay();
-    infoText.textContent= `Alle 3 Spins beendet, Gesamt: ${total}`;
+    infoText.textContent=`Alle 3 Spins beendet, Gesamt: ${total}`;
     wheelBtn.disabled=true;
     return;
   }
@@ -181,9 +177,9 @@ function updateSpinDisplay(){
   const s2= spins.find(s=>s.spinNumber===2);
   const s3= spins.find(s=>s.spinNumber===3);
 
-  spin1Display.textContent= s1 && s1.value!=null ? s1.value: '-';
-  spin2Display.textContent= s2 && s2.value!=null ? s2.value: '-';
-  spin3Display.textContent= s3 && s3.value!=null ? s3.value: '-';
+  spin1Display.textContent= (s1 && s1.value!=null)? s1.value: '-';
+  spin2Display.textContent= (s2 && s2.value!=null)? s2.value: '-';
+  spin3Display.textContent= (s3 && s3.value!=null)? s3.value: '-';
   totalPointsDisplay.textContent= total;
 }
 
@@ -191,8 +187,8 @@ function updateSpinDisplay(){
 function startSpin(){
   if(spinning||stopping) return;
   spinning=true;
-  velocity= Math.random()*3 +3; // grad/frame
-  infoText.textContent= `Spin ${currentSpinNumber} läuft...`;
+  velocity= Math.random()*3 +3;
+  infoText.textContent=`Spin ${currentSpinNumber} läuft...`;
   markerIndex=null;
 }
 
@@ -217,7 +213,7 @@ function stopSpin(){
   },1000/60);
 }
 
-// Letzter Spin => autostop
+// Spin 3 => autoStop
 function autoStopSpin(){
   if(!spinning||stopping) return;
   stopping=true;
@@ -228,7 +224,7 @@ function autoStopSpin(){
   },randomDelay);
 }
 
-// 5° bounce => finalize
+// bounce => finalize
 function doBounce(){
   stopping=true;
   const steps=30;
@@ -247,16 +243,19 @@ function doBounce(){
   },1000/60);
 }
 
-// finalize => /api/spinResult => markerIndex
 function finalizeSpin(){
   let finalAngle= (angle%360+360)%360;
 
   fetch('/api/spinResult',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ playerId, spinNumber: currentSpinNumber, finalAngle })
+    body: JSON.stringify({
+      playerId,
+      spinNumber: currentSpinNumber,
+      finalAngle
+    })
   })
-    .then(r=>r.json())
+    .then(r=> r.json())
     .then(data=>{
       if(data.error){
         alert(data.error);
@@ -264,48 +263,62 @@ function finalizeSpin(){
       }
       const spinValue= data.spinValue;
       total= data.total;
-      const spinObj= spins.find(s=> s.spinNumber===currentSpinNumber);
+
+      const spinObj= spins.find(s=>s.spinNumber===currentSpinNumber);
       if(spinObj){
         spinObj.value= spinValue;
       }
       updateSpinDisplay();
-      infoText.textContent= `Spin ${currentSpinNumber} Ergebnis: ${spinValue}. Gesamt: ${total}`;
+      infoText.textContent=`Spin ${currentSpinNumber} Ergebnis: ${spinValue}. Gesamt: ${total}`;
 
-      // roter Marker
+      // Marker
       const distribution= spinObj.distribution;
       const segCount= distribution.length;
       const segAngle= 360/ segCount;
-      let idx= Math.floor(finalAngle / segAngle);
+      let idx= Math.floor(finalAngle/ segAngle);
       if(idx>=segCount) idx= segCount-1;
       markerIndex= idx;
 
-      // 3s Pause
+      // Warte 3s
       if(currentSpinNumber<3){
+        // Spin1 oder Spin2 => normaler Flow
         setTimeout(()=>{
           currentSpinNumber++;
           angle=0; velocity=0; spinning=false; stopping=false;
           wheelBtn.disabled=false;
           wheelBtn.textContent='Start';
           infoText.textContent=`Spin ${currentSpinNumber} bereit`;
+
           markerIndex=null;
         },3000);
       } else {
-        // final
+        // Spin 3 => final
         setTimeout(()=>{
           infoText.textContent=`3. Spin fertig. Gesamt: ${total}`;
-          wheelBtn.disabled=true;
+          // Button -> "Fertig / Logout"
+          wheelBtn.disabled=false; // freigeben
+          wheelBtn.textContent="Fertig / Logout";
+
+          // Den alten Handler entfernen ...
+          wheelBtn.removeEventListener('click', handleWheelButton);
+
+          // ... und neuen Handler => location.reload()
+          wheelBtn.addEventListener('click', ()=>{
+            location.reload();
+          });
         },3000);
       }
     })
     .catch(err=>{
       console.error(err);
-      alert('Fehler /api/spinResult');
+      alert('Fehler bei /api/spinResult');
     });
 }
 
-/** Klick => Start/Stop => handleWheelButton */
+/** Klick => Spin1/2 => manueller Stop, Spin3 => autoStop */
 function handleWheelButton(){
   if(currentSpinNumber<3){
+    // Spin1 oder Spin2
     if(!spinning && !stopping){
       startSpin();
       wheelBtn.textContent='Stop';
@@ -314,6 +327,7 @@ function handleWheelButton(){
       wheelBtn.textContent='Start';
     }
   } else if(currentSpinNumber===3){
+    // Letzter Spin => autoStop
     if(!spinning && !stopping){
       startSpin();
       autoStopSpin();
@@ -323,8 +337,8 @@ function handleWheelButton(){
   }
 }
 
-// WICHTIG => Button aktivieren
+// Klick-Event
 wheelBtn.addEventListener('click', handleWheelButton);
 
-// Exporte => 'registerPlayer' wird in index.html per Form-Submit getriggert
+// init
 ctx.clearRect(0,0,400,400);
