@@ -11,8 +11,8 @@ adminLoginBtn.addEventListener('click', () => {
   const pass = adminPass.value.trim();
 
   fetch('/api/admin/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ user, pass })
   })
     .then(r => {
@@ -21,24 +21,26 @@ adminLoginBtn.addEventListener('click', () => {
     })
     .then(data => {
       if (data.success) {
-        loginArea.style.display = 'none';
-        dashboard.style.display = 'block';
+        loginArea.style.display='none';
+        dashboard.style.display='block';
         loadPlayers();
-        // Alle 5s
+        // Alle 5s neu laden => "Live"
         setInterval(loadPlayers, 5000);
       }
     })
-    .catch(err => alert(err.message));
+    .catch(err => {
+      alert(err.message);
+    });
 });
 
 function loadPlayers() {
   fetch('/api/admin/players')
-    .then(r => r.json())
-    .then(data => {
-      resultsTable.innerHTML = '';
-      data.players.forEach(p => {
+    .then(r=>r.json())
+    .then(data=>{
+      resultsTable.innerHTML='';
+      data.players.forEach(p=>{
         const tr = document.createElement('tr');
-        tr.innerHTML = `
+        tr.innerHTML= `
           <td>${p.firstname}</td>
           <td>${p.lastname}</td>
           <td>${p.spin1===null?'':p.spin1}</td>
@@ -49,5 +51,5 @@ function loadPlayers() {
         resultsTable.appendChild(tr);
       });
     })
-    .catch(err => console.error(err));
+    .catch(err=>console.error(err));
 }
