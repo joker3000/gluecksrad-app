@@ -8,24 +8,34 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Hilfsfunktionen (Beispiel, je nach Deinem Schema)
+// Hilfsfunktionen
 function getPlayerId(firstname, lastname) {
-  const row = db.prepare(`SELECT id FROM players WHERE firstname=? AND lastname=?`).get(firstname, lastname);
+  const row = db
+    .prepare(`SELECT id FROM players WHERE firstname=? AND lastname=?`)
+    .get(firstname, lastname);
   return row ? row.id : null;
 }
+
 function createPlayer(firstname, lastname) {
-  const info = db.prepare(`INSERT INTO players (firstname, lastname) VALUES (?, ?)`).run(firstname, lastname);
+  const info = db
+    .prepare(`INSERT INTO players (firstname, lastname) VALUES (?, ?)`)
+    .run(firstname, lastname);
   return info.lastInsertRowid;
 }
+
 function getSpin(playerId, spinNumber) {
-  return db.prepare(`SELECT * FROM spins WHERE player_id=? AND spin_number=?`).get(playerId, spinNumber);
+  return db
+    .prepare(`SELECT * FROM spins WHERE player_id=? AND spin_number=?`)
+    .get(playerId, spinNumber);
 }
+
 function createSpin(playerId, spinNumber, distribution) {
   db.prepare(`
     INSERT INTO spins (player_id, spin_number, distribution)
     VALUES (?, ?, ?)
   `).run(playerId, spinNumber, JSON.stringify(distribution));
 }
+
 function updateSpinResult(spinId, finalAngle, finalValue) {
   db.prepare(`
     UPDATE spins
@@ -35,9 +45,6 @@ function updateSpinResult(spinId, finalAngle, finalValue) {
 }
 
 // 1) /api/register
-//   - Legt Player an (falls nicht existiert)
-//   - Erzeugt spin1..3, falls nicht vorhanden, mit zufälliger distribution
-//   - Liefert alle spin-Daten + Gesamtscore
 app.post('/api/register', (req, res) => {
   const { firstname, lastname } = req.body;
   if (!firstname || !lastname) {
@@ -48,27 +55,30 @@ app.post('/api/register', (req, res) => {
     playerId = createPlayer(firstname, lastname);
   }
 
-  // max 3 Spins
+  // spin1..3 anlegen, falls nicht vorhanden
   for (let s = 1; s <= 3; s++) {
     const existing = getSpin(playerId, s);
     if (!existing) {
-      // zufällige Verteilung
-      let base = [
-        0,0,0,0,
-        10,10,10,
-        25,25,
-        50,100,200,400,600,800,1000
+      // Zufällige Verteilung
+      const baseSegments = [
+        0, 0, 0, 0,
+        10, 10, 10,
+        25, 25,
+        50, 100, 200, 400, 600, 800, 1000
       ];
-      for (let i = base.length - 1; i > 0; i--) {
+      for (let i = baseSegments.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [base[i], base[j]] = [base[j], base[i]];
+        [baseSegments[i], baseSegments[j]] = [baseSegments[j], baseSegments[i]];
       }
-      createSpin(playerId, s, base);
+      createSpin(playerId, s, baseSegments);
     }
   }
 
-  // Spindaten laden
-  const allSpins = db.prepare(`SELECT * FROM spins WHERE player_id=? ORDER BY spin_number`).all(playerId);
+  // Alle Spins laden
+  const allSpins = db
+    .prepare(`SELECT * FROM spins WHERE player_id=? ORDER BY spin_number`)
+    .all(playerId);
+
   let total = 0;
   const spinInfo = allSpins.map(sp => {
     const dist = JSON.parse(sp.distribution);
@@ -92,12 +102,12 @@ app.post('/api/register', (req, res) => {
 });
 
 // 2) /api/spinResult
-//    Nimmt finalAngle (0..360), kein Offset nötig, da Pointer bei 0° = rechts.
-//    index = floor(finalAngle / (360/16))
+// Nimmt finalAngle (0..360) => index = floor(finalAngle / segAngle)
+// => spin_value = distribution[index]
 app.post('/api/spinResult', (req, res) => {
   const { playerId, spinNumber, finalAngle } = req.body;
   if (!playerId || !spinNumber || finalAngle === undefined) {
-    return res.status(400).json({ error: 'Ungültige Parameter.' });
+    return res.status(400).json({ error: 'Ungültige Parameter' });
   }
 
   const spin = getSpin(playerId, spinNumber);
@@ -112,20 +122,22 @@ app.post('/api/spinResult', (req, res) => {
   const segCount = distribution.length; // 16
   const segAngle = 360 / segCount;
 
-  // Normalisieren
   let rawAngle = (finalAngle % 360 + 360) % 360;
   let idx = Math.floor(rawAngle / segAngle);
-  if (idx >= segCount) idx = segCount - 1; // fallback
+  if (idx >= segCount) idx = segCount - 1; // Sicherheitscheck
 
   const finalValue = distribution[idx];
-  
-  // Speichern
+
+  // DB-Update
   updateSpinResult(spin.id, finalAngle, finalValue);
 
-  // Total neu berechnen
-  const allSpins = db.prepare(`SELECT * FROM spins WHERE player_id=?`).all(playerId);
+  // total neu berechnen
+  const allSpins = db
+    .prepare(`SELECT * FROM spins WHERE player_id=?`)
+    .all(playerId);
+
   let total = 0;
-  for (let s of allSpins) {
+  for (const s of allSpins) {
     if (s.spin_value !== null) total += s.spin_value;
   }
 
@@ -141,7 +153,7 @@ app.post('/api/admin/login', (req, res) => {
   return res.status(401).json({ error: 'Falsche Zugangsdaten' });
 });
 
-// 4) /api/admin/players => Sortiert nach total
+// 4) /api/admin/players => sortiert nach total absteigend
 app.get('/api/admin/players', (req, res) => {
   const players = db.prepare(`SELECT * FROM players`).all();
   let resultRows = players.map(p => {
@@ -155,23 +167,4 @@ app.get('/api/admin/players', (req, res) => {
     return {
       firstname: p.firstname,
       lastname: p.lastname,
-      spin1: spinValues[0],
-      spin2: spinValues[1],
-      spin3: spinValues[2],
-      total
-    };
-  });
-  // Absteigend sortieren
-  resultRows.sort((a,b) => b.total - a.total);
-
-  res.json({ players: resultRows });
-});
-
-// Fallback
-app.use((req, res) => {
-  res.status(404).send('Not found');
-});
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+  
