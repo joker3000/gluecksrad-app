@@ -19,33 +19,28 @@ button {
   cursor: pointer;
 }
 
-/* Um den Zeiger links zu platzieren, packen wir Canvas + Zeiger in einen Container */
-.wrapper {
-  position: relative;
-  display: inline-block; /* damit Container nur so breit wie nötig */
-}
-
-/* Der Zeiger selbst */
-.pointer {
-  position: absolute;
-  left: -25px;    /* etwas links außerhalb des Canvas */
-  top: 50%;       /* vertikal zentrieren */
-  transform: translateY(-50%);
-  width: 0; 
-  height: 0;
-  border-top: 12px solid transparent;
-  border-bottom: 12px solid transparent;
-  border-right: 20px solid red; 
-  /* Jetzt haben wir ein kleines rotes Dreieck, das auf das Canvas zeigt */
-}
-
-/* Canvas */
-canvas {
+#wheel {
   border: 2px solid #333;
   display: block;
 }
 
-/* Spielbereich-Container */
-#gameArea {
-  margin-top: 20px;
+/* Container für Canvas + Pointer */
+.wheel-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Der Marker links, Spitze nach rechts gerichtet */
+.pointer {
+  position: absolute;
+  left: -20px;    /* Schiebt das Dreieck links hinaus */
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 0;
+  height: 0;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  border-right: 20px solid red;
+  /* => Spitze zeigt nach rechts */
 }
