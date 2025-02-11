@@ -1,11 +1,12 @@
 const path = require('path');
 const Database = require('better-sqlite3');
 
-// **ACHTUNG**: Auf Vercel nur in /tmp/ möglich, wenn Du eine .db-Datei
-// anlegen willst (sie ist NICHT dauerhaft). Lokal kannst Du gluecksrad.db nehmen.
+// Falls Du lokal testest, kannst Du "gluecksrad.db" im Projektordner nutzen.
+// Auf Vercel solltest Du "/tmp/gluecksrad.db" verwenden – aber dort ist sie nicht dauerhaft.
+// Wir wählen je nach Umgebungsvariable:
 const dbPath = process.env.VERCEL
-  ? path.join('/tmp', 'gluecksrad.db') // ephemeral
-  : 'gluecksrad.db';                  // lokal persistent
+  ? path.join('/tmp', 'gluecksrad.db')
+  : 'gluecksrad.db';
 
 const db = new Database(dbPath);
 
