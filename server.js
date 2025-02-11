@@ -118,4 +118,71 @@ app.post('/api/spinResult', (req, res) => {
     return res.status(400).json({ error: 'Spin bereits abgeschlossen.' });
   }
 
-  const distribution 
+  const distribution = JSON.parse(spin.distribution);
+  const segCount = distribution.length; // 16
+  const segAngle = 360 / segCount;
+
+  let rawAngle = (finalAngle % 360 + 360) % 360;
+  let idx = Math.floor(rawAngle / segAngle);
+  if (idx >= segCount) idx = segCount - 1;
+
+  const finalValue = distribution[idx];
+  updateSpinResult(spin.id, finalAngle, finalValue);
+
+  // total neu berechnen
+  const allSpins = db.prepare(`
+    SELECT * FROM spins WHERE player_id=?
+  `).all(playerId);
+
+  let total = 0;
+  for (const s of allSpins) {
+    if (s.spin_value !== null) total += s.spin_value;
+  }
+
+  res.json({ success: true, spinValue: finalValue, total });
+});
+
+// 3) /api/admin/login
+app.post('/api/admin/login', (req, res) => {
+  const { user, pass } = req.body;
+  if (user === 'admin' && pass === 'secret') {
+    return res.json({ success: true });
+  }
+  return res.status(401).json({ error: 'Falsche Zugangsdaten' });
+});
+
+// 4) /api/admin/players => sortiert nach total
+app.get('/api/admin/players', (req, res) => {
+  const players = db.prepare(`SELECT * FROM players`).all();
+
+  let resultRows = players.map(p => {
+    const spins = db.prepare(`SELECT * FROM spins WHERE player_id=?`).all(p.id);
+    let total = 0;
+    const spinValues = [null,null,null];
+    for (let s of spins) {
+      if (s.spin_value !== null) total += s.spin_value;
+      spinValues[s.spin_number-1] = s.spin_value;
+    }
+    return {
+      firstname: p.firstname,
+      lastname: p.lastname,
+      spin1: spinValues[0],
+      spin2: spinValues[1],
+      spin3: spinValues[2],
+      total
+    };
+  });
+  // Absteigend sortieren
+  resultRows.sort((a,b) => b.total - a.total);
+
+  res.json({ players: resultRows });
+});
+
+// Fallback
+app.use((req, res) => {
+  res.status(404).send('Not found');
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
