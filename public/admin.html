@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Bereich</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Admin Bereich</h1>
+
+  <div id="loginArea">
+    <label for="adminUser">Benutzer:</label>
+    <input type="text" id="adminUser" placeholder="admin" />
+    <label for="adminPass">Passwort:</label>
+    <input type="password" id="adminPass" placeholder="secret" />
+    <button id="adminLoginBtn">Login</button>
+  </div>
+
+  <div id="dashboard" style="display:none;">
+    <h2>Spielergebnisse</h2>
+    <table style="margin:0 auto;">
+      <thead>
+        <tr>
+          <th>Vorname</th>
+          <th>Nachname</th>
+          <th>Spin1</th>
+          <th>Spin2</th>
+          <th>Spin3</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="resultsTable"></tbody>
+    </table>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
