@@ -15,19 +15,23 @@ const totalPointsDisplay = document.getElementById('totalPoints');
 const canvas = document.getElementById('wheel');
 const ctx = canvas.getContext('2d');
 
-// GESAMTZUSTAND
+// Spiellogik
 let playerId = null;
-let spins = [];    // [{spinNumber,distribution,angle,value},...]
+let spins = [];
 let total = 0;
-let currentSpinNumber = 1; // 1..3
+let currentSpinNumber = 1;
 
-// ANIMATION
-let angle = 0;       // Winkel in Grad => 0° = rechts
+// Animation
+let angle = 0;       // in Grad => 0° = rechts
 let velocity = 0;    // grad/frame
 let spinning = false;
 let stopping = false;
 
-// Start Loop
+// **Debug**: Hier speichern wir den Winkel, der "finalAngle" war
+// Damit wir ihn als rote Linie im Canvas zeichnen.
+let debugFinalAngle = null;
+
+// Start-Loop
 function animate() {
   requestAnimationFrame(animate);
   if (spinning) {
@@ -44,54 +48,87 @@ function animate() {
 }
 animate();
 
-// Zeichnet das Wheel basierend auf currentSpinNumber
+/**
+ * Zeichnet das Wheel + Debug-Linien
+ */
 function drawWheel() {
-  const spinObj = spins.find(s => s.spinNumber===currentSpinNumber);
+  const spinObj = spins.find(s => s.spinNumber === currentSpinNumber);
   if (!spinObj) {
-    ctx.clearRect(0,0,400,400);
+    ctx.clearRect(0, 0, 400, 400);
     return;
   }
   const distribution = spinObj.distribution;
   if (!distribution) {
-    ctx.clearRect(0,0,400,400);
+    ctx.clearRect(0, 0, 400, 400);
     return;
   }
 
-  const segCount = distribution.length; // 16
-  const segAngle = 2*Math.PI/segCount;
+  const segCount = distribution.length; // z.B. 16
+  const segAngle = 2 * Math.PI / segCount;
 
-  ctx.clearRect(0,0,400,400);
-  // z.B. Schrift
+  ctx.clearRect(0, 0, 400, 400);
   ctx.font = 'bold 20px sans-serif';
 
-  for (let i=0; i<segCount; i++) {
+  // 1) Glücksrad zeichnen
+  for (let i = 0; i < segCount; i++) {
     ctx.beginPath();
-    ctx.moveTo(200,200);
-    ctx.arc(200,200,200, i*segAngle, (i+1)*segAngle);
+    ctx.moveTo(200, 200);
+    ctx.arc(200, 200, 200, i * segAngle, (i + 1) * segAngle);
     ctx.fillStyle = randomColor(i);
     ctx.fill();
     ctx.stroke();
 
-    // Text
+    // Text mittig
     ctx.save();
-    ctx.translate(200,200);
-    ctx.rotate(i*segAngle + segAngle/2);
-    ctx.textAlign='center';
-    ctx.textBaseline='middle';
-    ctx.fillStyle='#000';
-    // z.B. 130
-    ctx.fillText(String(distribution[i]),130,0);
+    ctx.translate(200, 200);
+    ctx.rotate(i * segAngle + segAngle/2);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#000';
+    ctx.fillText(String(distribution[i]), 130, 0);
+    ctx.restore();
+  }
+
+  // 2) Debug-Linien
+  
+  // a) Segment-Grenzen (grau)
+  ctx.save();
+  ctx.translate(200, 200);
+  ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+  for (let i = 0; i < segCount; i++) {
+    ctx.save();
+    ctx.rotate(i * segAngle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(200, 0); // Linie nach rechts
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // b) "Rote Linie" für debugFinalAngle
+  if (debugFinalAngle !== null) {
+    const radDbg = debugFinalAngle * Math.PI / 180;
+    ctx.save();
+    ctx.translate(200, 200);
+    ctx.rotate(radDbg);
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(200, 0);
+    ctx.stroke();
     ctx.restore();
   }
 }
 
-// Zufällige Farben oder feste
+/** Farben */
 function randomColor(i) {
-  const colors = ["red","blue","green","orange","purple","yellow","cyan","pink"];
-  return colors[i % colors.length];
+  const base = ["red","blue","green","orange","purple","yellow","cyan","pink"];
+  return base[i % base.length];
 }
 
-// Registriert / holt Player
+/** Register / Fortsetzen */
 function registerPlayer() {
   const fname = firstnameInput.value.trim();
   const lname = lastnameInput.value.trim();
@@ -112,7 +149,7 @@ function registerPlayer() {
         return;
       }
       playerId = data.playerId;
-      spins = data.spins;  // array
+      spins = data.spins;
       total = data.total;
       gameArea.style.display='block';
       initSpinUI();
@@ -123,11 +160,9 @@ function registerPlayer() {
     });
 }
 
-// Bestimmt aktuellen Spin, zeigt UI
 function initSpinUI() {
-  let unfinished = spins.find(s=>s.value===null);
+  let unfinished = spins.find(s => s.value===null);
   if(!unfinished) {
-    // alle 3 fertig
     currentSpinNumber=4;
     updateSpinDisplay();
     infoText.textContent=`Alle 3 Spins beendet, Gesamt: ${total}`;
@@ -141,6 +176,8 @@ function initSpinUI() {
   wheelBtn.disabled=false;
   wheelBtn.textContent='Start';
   infoText.textContent=`Spin ${currentSpinNumber} bereit`;
+  // Wichtig: debugFinalAngle zurücksetzen
+  debugFinalAngle = null;
 }
 
 function updateSpinDisplay() {
@@ -154,7 +191,7 @@ function updateSpinDisplay() {
   totalPointsDisplay.textContent = total;
 }
 
-// START spin
+/** Start */
 function startSpin() {
   if(spinning||stopping) return;
   spinning=true;
@@ -162,14 +199,14 @@ function startSpin() {
   infoText.textContent=`Spin ${currentSpinNumber} läuft...`;
 }
 
-// STOP => 3s Abbremsen => doBounce => finalize
+/** Stop => 3s => doBounce => finalize */
 function stopSpin() {
   if(!spinning||stopping) return;
   stopping=true;
   wheelBtn.disabled=true;
 
   const initV=velocity;
-  const steps=60*3; // 3s
+  const steps=60*3; 
   let step=0;
 
   const slowInterval = setInterval(()=>{
@@ -183,23 +220,23 @@ function stopSpin() {
   },1000/60);
 }
 
-// Autostopp (3..7s)
+/** Autostopp (3..7s) */
 function autoStopSpin() {
   if(!spinning||stopping) return;
   stopping=true;
-  const randomDelay = Math.random()*4000+3000; // 3..7s
+  const randomDelay = Math.random()*4000+3000; 
   setTimeout(()=>{
     stopping=false;
     stopSpin();
   }, randomDelay);
 }
 
-// 5° bounce => finalize
+/** 5° bounce => finalize */
 function doBounce() {
   stopping=true;
-  const steps=30; // 0.5s
+  const steps=30;
   let step=0;
-  const bounceDeg=5; // minus 5
+  const bounceDeg=5;
 
   const bounceInt = setInterval(()=>{
     step++;
@@ -213,9 +250,12 @@ function doBounce() {
   },1000/60);
 }
 
-// finalize => /api/spinResult => server
+/** finalize => /api/spinResult => server */
 function finalizeSpin() {
   let finalAngle = (angle%360+360)%360;
+
+  // => Wir speichern diesen Winkel für die rote Linie
+  debugFinalAngle = finalAngle;
 
   fetch('/api/spinResult',{
     method:'POST',
@@ -235,7 +275,7 @@ function finalizeSpin() {
       const spinValue = data.spinValue;
       total = data.total;
       let sp = spins.find(s=>s.spinNumber===currentSpinNumber);
-      if(sp) sp.value = spinValue;
+      if(sp) sp.value= spinValue;
 
       updateSpinDisplay();
       infoText.textContent=`Spin ${currentSpinNumber} Ergebnis: ${spinValue}. Gesamt: ${total}`;
@@ -248,6 +288,7 @@ function finalizeSpin() {
           wheelBtn.disabled=false;
           wheelBtn.textContent='Start';
           infoText.textContent=`Spin ${currentSpinNumber} bereit`;
+          // debugFinalAngle = null; // optional, man könnte die Linie stehen lassen
         },2000);
       } else {
         setTimeout(()=>{
@@ -262,7 +303,7 @@ function finalizeSpin() {
     });
 }
 
-// Handle Start/Stop-Klick
+/** Klick-Handler */
 function handleWheelButton() {
   if(currentSpinNumber<3) {
     if(!spinning && !stopping) {
@@ -273,7 +314,6 @@ function handleWheelButton() {
       wheelBtn.textContent='Start';
     }
   } else if(currentSpinNumber===3) {
-    // Letzter Spin => start + autoStop
     if(!spinning && !stopping) {
       startSpin();
       autoStopSpin();
@@ -283,9 +323,9 @@ function handleWheelButton() {
   }
 }
 
-// Event-Listener
+/** Events */
 registerBtn.addEventListener('click', registerPlayer);
 wheelBtn.addEventListener('click', handleWheelButton);
 
-// Erstes leeres Zeichnen
+// Canvas init
 ctx.clearRect(0,0,400,400);
