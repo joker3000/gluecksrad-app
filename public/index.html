@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Glücksrad</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>Glücksrad</h1>
 
   <div>
     <label for="firstname">Vorname:</label>
-    <input type="text" id="firstname" placeholder="Max" />
+    <input type="text" id="firstname" placeholder="Max">
     
     <label for="lastname">Nachname:</label>
-    <input type="text" id="lastname" placeholder="Mustermann" />
+    <input type="text" id="lastname" placeholder="Mustermann">
     
     <button id="registerBtn">Spielen / Fortsetzen</button>
   </div>
@@ -21,18 +21,15 @@
   <div id="gameArea" style="display:none;">
     <p id="infoText"></p>
 
-    <div class="wheel-container">
-      <!-- Pointer rechts, 0° = Canvas-Standard -->
-      <div class="pointer"></div>
-      <canvas id="wheel" width="400" height="400"></canvas>
-    </div>
+    <!-- Nur Canvas, keine .pointer mehr -->
+    <canvas id="wheel" width="400" height="400"></canvas>
 
     <p>
       <button id="wheelBtn" disabled>Start / Stop</button>
     </p>
 
     <div>
-      <p><strong>Spin-Werte (Server-Berechnung via 0°):</strong></p>
+      <p><strong>Spin-Werte (Server-Berechnung via 0°)</strong></p>
       <p>Spin 1: <span id="spin1">-</span></p>
       <p>Spin 2: <span id="spin2">-</span></p>
       <p>Spin 3: <span id="spin3">-</span></p>
