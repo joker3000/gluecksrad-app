@@ -5,15 +5,26 @@ body {
   padding: 20px;
 }
 
+label {
+  margin-right: 10px;
+}
+
+button {
+  margin: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+/* Container für Canvas + Pointer */
 .wheel-container {
   position: relative;
   display: inline-block;
 }
 
-/* Der Pointer ist rechts vom Canvas */
+/* Pointer rechts => 0° ist nach rechts in Canvas-Logik */
 .pointer {
   position: absolute;
-  right: -20px;
+  right: -20px; /* ragt 20px raus */
   top: 50%;
   transform: translateY(-50%);
   width: 0;
@@ -23,7 +34,6 @@ body {
   border-left: 20px solid red; /* Spitze nach links */
 }
 
-/* Canvas standard */
 canvas {
   border: 2px solid #333;
   display: block;
