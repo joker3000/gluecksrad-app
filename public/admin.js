@@ -6,7 +6,6 @@ const loginArea = document.getElementById('loginArea');
 const dashboard = document.getElementById('dashboard');
 const resultsTable = document.getElementById('resultsTable');
 
-// Einfacher Login
 adminLoginBtn.addEventListener('click', () => {
   const user = adminUser.value.trim();
   const pass = adminPass.value.trim();
@@ -17,7 +16,9 @@ adminLoginBtn.addEventListener('click', () => {
     body: JSON.stringify({ user, pass })
   })
     .then(res => {
-      if (!res.ok) throw new Error('Login fehlgeschlagen');
+      if (!res.ok) {
+        throw new Error('Login fehlgeschlagen');
+      }
       return res.json();
     })
     .then(data => {
@@ -29,10 +30,11 @@ adminLoginBtn.addEventListener('click', () => {
         setInterval(loadPlayers, 5000);
       }
     })
-    .catch(err => alert(err.message));
+    .catch(err => {
+      alert(err.message);
+    });
 });
 
-// Lädt die Spielerdaten
 function loadPlayers() {
   fetch('/api/admin/players')
     .then(res => res.json())
@@ -43,9 +45,9 @@ function loadPlayers() {
         tr.innerHTML = `
           <td>${p.firstname}</td>
           <td>${p.lastname}</td>
-          <td>${p.spin1 !== null ? p.spin1 : ''}</td>
-          <td>${p.spin2 !== null ? p.spin2 : ''}</td>
-          <td>${p.spin3 !== null ? p.spin3 : ''}</td>
+          <td>${p.spin1 === null ? '' : p.spin1}</td>
+          <td>${p.spin2 === null ? '' : p.spin2}</td>
+          <td>${p.spin3 === null ? '' : p.spin3}</td>
           <td><strong>${p.total}</strong></td>
         `;
         resultsTable.appendChild(tr);
