@@ -1,9 +1,13 @@
+const path = require('path');
 const Database = require('better-sqlite3');
 
-// Datenbank anlegen (Datei: gluecksrad.db – in Vercel allerdings ephemer)
-const db = new Database('gluecksrad.db');
+// Auf Vercel kann nur im /tmp-Verzeichnis geschrieben werden.
+// Achtung: Daten sind nicht dauerhaft, da /tmp ephemer ist.
+const dbPath = path.join('/tmp', 'gluecksrad.db');
 
-// Tabellen anlegen (wenn nicht existieren)
+const db = new Database(dbPath);
+
+// Tabellen anlegen (wenn nicht vorhanden)
 db.exec(`
   CREATE TABLE IF NOT EXISTS players (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
