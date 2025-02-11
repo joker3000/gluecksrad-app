@@ -19,7 +19,8 @@ button {
   cursor: pointer;
 }
 
-#wheel {
+/* Rad */
+canvas {
   border: 2px solid #333;
   display: block;
 }
@@ -30,17 +31,16 @@ button {
   display: inline-block;
 }
 
-/* Der Marker links, Spitze nach rechts gerichtet */
+/* Der Marker links, Spitze nach rechts */
 .pointer {
   position: absolute;
-  left: -20px;    /* Schiebt das Dreieck links hinaus */
+  left: -20px;
   top: 50%;
   transform: translateY(-50%);
-
   width: 0;
   height: 0;
+
   border-top: 12px solid transparent;
   border-bottom: 12px solid transparent;
   border-right: 20px solid red;
-  /* => Spitze zeigt nach rechts */
 }
