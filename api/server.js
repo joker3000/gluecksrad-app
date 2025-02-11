@@ -1,52 +1,86 @@
 const express = require("express");
+const sqlite3 = require("sqlite3");
 const cors = require("cors");
-const db = require("./db");
 const path = require("path");
 
 const app = express();
-app.use(cors());
+const PORT = process.env.PORT || 3000;
+
+// ✅ Korrektur: SQLite-Datenbank in `/tmp` speichern (weil Vercel nur dort Schreibzugriff erlaubt)
+const dbPath = "/tmp/database.sqlite";
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error("Fehler beim Öffnen der SQLite-Datenbank:", err.message);
+    } else {
+        console.log("Verbindung zur SQLite-Datenbank erfolgreich!");
+        db.run(`
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE,
+                run1 INTEGER,
+                run2 INTEGER,
+                run3 INTEGER,
+                total INTEGER
+            )
+        `);
+    }
+});
+
 app.use(express.json());
+app.use(cors());
+app.use(express.static("public")); // Statische Dateien aus `public` bereitstellen
 
-// Statische Dateien aus dem `public/`-Ordner servieren
-app.use(express.static(path.join(__dirname, "../public")));
-
-// Spieler registrieren oder laden
+// 📌 Registrierung & Laden eines Spielers
 app.post("/api/register", (req, res) => {
-    const { vorname, nachname } = req.body;
-    db.get("SELECT * FROM spieler WHERE vorname = ? AND nachname = ?", [vorname, nachname], (err, row) => {
-        if (row) {
-            res.json(row);
-        } else {
-            db.run("INSERT INTO spieler (vorname, nachname) VALUES (?, ?)", [vorname, nachname], function () {
-                db.get("SELECT * FROM spieler WHERE id = ?", [this.lastID], (err, newRow) => {
-                    res.json(newRow);
-                });
-            });
+    const { name } = req.body;
+
+    db.get("SELECT * FROM users WHERE name = ?", [name], (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: "Datenbankfehler" });
         }
+        if (row) {
+            return res.json({ message: "Willkommen zurück!", user: row });
+        }
+
+        db.run("INSERT INTO users (name, run1, run2, run3, total) VALUES (?, 0, 0, 0, 0)", [name], function (err) {
+            if (err) {
+                return res.status(500).json({ error: "Fehler beim Speichern" });
+            }
+            res.json({ message: "Registrierung erfolgreich!", user: { id: this.lastID, name, run1: 0, run2: 0, run3: 0, total: 0 } });
+        });
     });
 });
 
-// Ergebnis speichern
-app.post("/api/save-score", (req, res) => {
-    const { id, run, score } = req.body;
-    const column = `run${run}`;
-    
-    db.run(`UPDATE spieler SET ${column} = ?, total = COALESCE(run1,0) + COALESCE(run2,0) + COALESCE(run3,0) WHERE id = ?`,
-        [score, id],
-        function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: "Score gespeichert!" });
+// 📌 Speichert die Punktzahl eines Drehversuchs
+app.post("/api/saveScore", (req, res) => {
+    const { name, run, score } = req.body;
+
+    if (run < 1 || run > 3) {
+        return res.status(400).json({ error: "Ungültiger Run" });
+    }
+
+    db.run(`UPDATE users SET run${run} = ?, total = run1 + run2 + run3 WHERE name = ?`, [score, name], function (err) {
+        if (err) {
+            return res.status(500).json({ error: "Fehler beim Speichern" });
         }
-    );
+        res.json({ message: `Run ${run} gespeichert!` });
+    });
 });
 
-// Alle Spieler abrufen
+// 📌 Alle Spielergebnisse abrufen (Admin)
 app.get("/api/scores", (req, res) => {
-    db.all("SELECT * FROM spieler", [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+    db.all("SELECT * FROM users", [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: "Fehler beim Laden der Daten" });
+        }
         res.json(rows);
     });
 });
 
-// Port für Vercel setzen
-app.listen(3000, () => console.log("Server läuft auf Port 3000"));
+// 📌 Statische Datei für Admin-Bereich bereitstellen
+app.get("/admin", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
+
+// ✅ Vercel-Kompatibilität: Exportiere das `app`-Objekt
+module.exports = app;
