@@ -1,10 +1,8 @@
 const adminUser = document.getElementById('adminUser');
 const adminPass = document.getElementById('adminPass');
-// adminLoginBtn => Klick + Enter => form submit => adminLogin()
-
 const dashboard = document.getElementById('dashboard');
 const resultsTable = document.getElementById('resultsTable');
-const loginArea = document.getElementById('adminForm'); // Das <form>
+const loginArea = document.getElementById('adminForm');
 
 function adminLogin() {
   const user = adminUser.value.trim();
@@ -34,11 +32,11 @@ function adminLogin() {
 
 function loadPlayers(){
   fetch('/api/admin/players')
-    .then(r=> r.json())
+    .then(r=>r.json())
     .then(data=>{
       resultsTable.innerHTML='';
       data.players.forEach(p=>{
-        const tr = document.createElement('tr');
+        const tr= document.createElement('tr');
         tr.innerHTML=`
           <td>${p.firstname}</td>
           <td>${p.lastname}</td>
