@@ -1,11 +1,8 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "api/server.js", "use": "@vercel/node" },
-    { "src": "public/**", "use": "@vercel/static" }
-  ],
+  "builds": [{ "src": "server.js", "use": "@vercel/node" }],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/server.js" },
-    { "src": "/(.*)", "dest": "/public/$1" }
+    { "src": "/register", "dest": "server.js" },
+    { "src": "/save-score", "dest": "server.js" },
+    { "src": "/admin-data", "dest": "server.js" }
   ]
 }
