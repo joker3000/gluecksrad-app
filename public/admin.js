@@ -6,7 +6,7 @@ const loginArea = document.getElementById('loginArea');
 const dashboard = document.getElementById('dashboard');
 const resultsTable = document.getElementById('resultsTable');
 
-adminLoginBtn.addEventListener('click', ()=>{
+adminLoginBtn.addEventListener('click', () => {
   const user = adminUser.value.trim();
   const pass = adminPass.value.trim();
 
@@ -24,7 +24,6 @@ adminLoginBtn.addEventListener('click', ()=>{
         loginArea.style.display='none';
         dashboard.style.display='block';
         loadPlayers();
-        // Alle 5s neu laden => live
         setInterval(loadPlayers, 5000);
       }
     })
@@ -33,7 +32,7 @@ adminLoginBtn.addEventListener('click', ()=>{
     });
 });
 
-function loadPlayers() {
+function loadPlayers(){
   fetch('/api/admin/players')
     .then(r=>r.json())
     .then(data=>{
