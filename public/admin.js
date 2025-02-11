@@ -15,29 +15,25 @@ adminLoginBtn.addEventListener('click', () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user, pass })
   })
-    .then(res => {
-      if (!res.ok) {
-        throw new Error('Login fehlgeschlagen');
-      }
-      return res.json();
+    .then(r => {
+      if (!r.ok) throw new Error('Login fehlgeschlagen');
+      return r.json();
     })
     .then(data => {
       if (data.success) {
         loginArea.style.display = 'none';
         dashboard.style.display = 'block';
         loadPlayers();
-        // Alle 5s aktualisieren => "Live"
+        // Alle 5s
         setInterval(loadPlayers, 5000);
       }
     })
-    .catch(err => {
-      alert(err.message);
-    });
+    .catch(err => alert(err.message));
 });
 
 function loadPlayers() {
   fetch('/api/admin/players')
-    .then(res => res.json())
+    .then(r => r.json())
     .then(data => {
       resultsTable.innerHTML = '';
       data.players.forEach(p => {
@@ -45,15 +41,13 @@ function loadPlayers() {
         tr.innerHTML = `
           <td>${p.firstname}</td>
           <td>${p.lastname}</td>
-          <td>${p.spin1 === null ? '' : p.spin1}</td>
-          <td>${p.spin2 === null ? '' : p.spin2}</td>
-          <td>${p.spin3 === null ? '' : p.spin3}</td>
+          <td>${p.spin1===null?'':p.spin1}</td>
+          <td>${p.spin2===null?'':p.spin2}</td>
+          <td>${p.spin3===null?'':p.spin3}</td>
           <td><strong>${p.total}</strong></td>
         `;
         resultsTable.appendChild(tr);
       });
     })
-    .catch(err => {
-      console.error(err);
-    });
+    .catch(err => console.error(err));
 }
