@@ -8,15 +8,16 @@
 <body>
   <h1>Admin Bereich</h1>
 
-  <div id="loginArea" class="register-area">
+  <!-- Ebenfalls ein Form => Enter auf den Inputs => login -->
+  <form id="adminForm" class="register-area">
     <label for="adminUser">User:</label>
-    <input type="text" id="adminUser" placeholder="admin" />
+    <input type="text" id="adminUser" placeholder="admin" required />
     
     <label for="adminPass">Pass:</label>
-    <input type="password" id="adminPass" placeholder="secret" />
+    <input type="password" id="adminPass" placeholder="secret" required />
     
-    <button id="adminLoginBtn" class="btn-main">Login</button>
-  </div>
+    <button id="adminLoginBtn" class="btn-main" type="submit">Login</button>
+  </form>
 
   <div id="dashboard" style="display:none;">
     <h2>Spielergebnisse (Live)</h2>
@@ -36,5 +37,12 @@
   </div>
 
   <script src="admin.js"></script>
+  <script>
+    // Unterbindet den default-Submit, ruft login
+    document.getElementById('adminForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      adminLogin();
+    });
+  </script>
 </body>
 </html>
