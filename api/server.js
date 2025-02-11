@@ -1,86 +1,109 @@
 const express = require("express");
-const sqlite3 = require("sqlite3");
+const sqlite3 = require("sqlite3").verbose();
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ Korrektur: SQLite-Datenbank in `/tmp` speichern (weil Vercel nur dort Schreibzugriff erlaubt)
+// Sicherstellen, dass die Datenbank im richtigen Verzeichnis erstellt wird
 const dbPath = process.env.NODE_ENV === "production" ? "/tmp/database.sqlite" : "database.sqlite";
+console.log("Verwendeter Datenbankpfad:", dbPath);
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static("public"));
+
+// Prüfen, ob die Datei existiert, wenn nicht, dann neu erstellen
+if (!fs.existsSync(dbPath)) {
+    console.log("Erstelle neue SQLite-Datenbank...");
+    fs.writeFileSync(dbPath, "");
+}
+
+// Datenbank initialisieren
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
-        console.error("Fehler beim Öffnen der SQLite-Datenbank:", err.message);
+        console.error("Fehler beim Öffnen der Datenbank:", err.message);
     } else {
-        console.log("Verbindung zur SQLite-Datenbank erfolgreich!");
+        console.log("Erfolgreich mit SQLite verbunden.");
         db.run(`
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT UNIQUE,
-                run1 INTEGER,
-                run2 INTEGER,
-                run3 INTEGER,
-                total INTEGER
+                run1 INTEGER DEFAULT 0,
+                run2 INTEGER DEFAULT 0,
+                run3 INTEGER DEFAULT 0,
+                total INTEGER DEFAULT 0
             )
         `);
     }
 });
 
-app.use(express.json());
-app.use(cors());
-app.use(express.static("public")); // Statische Dateien aus `public` bereitstellen
-
-// 📌 Registrierung & Laden eines Spielers
-app.post("/api/register", (req, res) => {
+// Registrierung eines neuen Benutzers oder Fortsetzung, falls er existiert
+app.post("/register", (req, res) => {
     const { name } = req.body;
+
+    if (!name) {
+        return res.status(400).json({ error: "Name ist erforderlich" });
+    }
 
     db.get("SELECT * FROM users WHERE name = ?", [name], (err, row) => {
         if (err) {
-            return res.status(500).json({ error: "Datenbankfehler" });
+            console.error("Fehler bei der Benutzersuche:", err.message);
+            return res.status(500).json({ error: "Fehler bei der Registrierung" });
         }
+
         if (row) {
             return res.json({ message: "Willkommen zurück!", user: row });
+        } else {
+            db.run(
+                "INSERT INTO users (name, run1, run2, run3, total) VALUES (?, 0, 0, 0, 0)",
+                [name],
+                function (err) {
+                    if (err) {
+                        console.error("Fehler bei der Registrierung:", err.message);
+                        return res.status(500).json({ error: "Fehler beim Speichern" });
+                    }
+                    res.json({ message: "Registrierung erfolgreich!", user: { id: this.lastID, name, run1: 0, run2: 0, run3: 0, total: 0 } });
+                }
+            );
         }
-
-        db.run("INSERT INTO users (name, run1, run2, run3, total) VALUES (?, 0, 0, 0, 0)", [name], function (err) {
-            if (err) {
-                return res.status(500).json({ error: "Fehler beim Speichern" });
-            }
-            res.json({ message: "Registrierung erfolgreich!", user: { id: this.lastID, name, run1: 0, run2: 0, run3: 0, total: 0 } });
-        });
     });
 });
 
-// 📌 Speichert die Punktzahl eines Drehversuchs
-app.post("/api/saveScore", (req, res) => {
+// Speichert das Ergebnis eines Drehvorgangs
+app.post("/save-score", (req, res) => {
     const { name, run, score } = req.body;
 
-    if (run < 1 || run > 3) {
-        return res.status(400).json({ error: "Ungültiger Run" });
+    if (!name || !run || score === undefined) {
+        return res.status(400).json({ error: "Ungültige Daten" });
     }
 
-    db.run(`UPDATE users SET run${run} = ?, total = run1 + run2 + run3 WHERE name = ?`, [score, name], function (err) {
+    const column = `run${run}`;
+    const updateQuery = `UPDATE users SET ${column} = ?, total = run1 + run2 + run3 WHERE name = ?`;
+
+    db.run(updateQuery, [score, name], function (err) {
         if (err) {
-            return res.status(500).json({ error: "Fehler beim Speichern" });
+            console.error("Fehler beim Speichern der Punkte:", err.message);
+            return res.status(500).json({ error: "Fehler beim Speichern der Punktzahl" });
         }
-        res.json({ message: `Run ${run} gespeichert!` });
+        res.json({ message: `Dreh ${run} gespeichert!`, score });
     });
 });
 
-// 📌 Alle Spielergebnisse abrufen (Admin)
-app.get("/api/scores", (req, res) => {
+// Holt alle Benutzer für das Admin-Panel
+app.get("/admin-data", (req, res) => {
     db.all("SELECT * FROM users", [], (err, rows) => {
         if (err) {
+            console.error("Fehler beim Abrufen der Daten:", err.message);
             return res.status(500).json({ error: "Fehler beim Laden der Daten" });
         }
         res.json(rows);
     });
 });
 
-// 📌 Statische Datei für Admin-Bereich bereitstellen
-app.get("/admin", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "admin.html"));
+// Server starten
+app.listen(PORT, () => {
+    console.log(`Server läuft auf Port ${PORT}`);
 });
-
-// ✅ Vercel-Kompatibilität: Exportiere das `app`-Objekt
-module.exports = app;
