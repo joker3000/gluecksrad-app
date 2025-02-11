@@ -1,30 +1,29 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Glücksrad</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1>Glücksrad</h1>
 
-  <!-- Eingabe der Nutzerdaten -->
   <div>
     <label for="firstname">Vorname:</label>
-    <input type="text" id="firstname" placeholder="Vorname">
-    
+    <input type="text" id="firstname" placeholder="Max" />
+
     <label for="lastname">Nachname:</label>
-    <input type="text" id="lastname" placeholder="Nachname">
-    
+    <input type="text" id="lastname" placeholder="Mustermann" />
+
     <button id="registerBtn">Spielen / Fortsetzen</button>
   </div>
 
-  <!-- Spielbereich -->
+  <!-- Hier das eigentliche Spiel -->
   <div id="gameArea" style="display:none;">
     <p id="infoText"></p>
 
-    <!-- Zeiger links: Wir platzieren den Pfeil mit CSS am linken Rand. -->
-    <div class="wrapper">
+    <div class="wheel-container">
+      <!-- Unser Pointer am linken Rand, Spitze nach rechts -->
       <div class="pointer"></div>
       <canvas id="wheel" width="400" height="400"></canvas>
     </div>
