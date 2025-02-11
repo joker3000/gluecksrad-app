@@ -1,13 +1,13 @@
 {
   "name": "gluecksrad",
   "version": "1.0.0",
-  "description": "Ein Glücksrad-Spiel mit Node.js, Express und SQLite",
+  "description": "Glücksrad-App mit Node.js, Express und SQLite",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "engines": {
-    "node": "20.x"
+    "node": "18.x"
   },
   "dependencies": {
     "express": "^4.18.2",
