@@ -13,34 +13,39 @@ label {
   margin-right: 10px;
 }
 
-.pointer-left {
-  position: relative;
-  display: inline-block;
-  margin-right: -60px; /* Negative Margin, damit der Pointer "über" dem Canvas ist */
-  vertical-align: middle;
-}
-
-.pointer {
-  width: 30px;
-  height: 10px;
-  background: red;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  left: 100%;
-  /* Das hier kann man weiter stylen, z.B. eine Pfeilspitze basteln */
-}
-
-/* Canvas soll inline mit pointer sein */
-canvas {
-  border: 2px solid #333;
-  display: inline-block;
-  vertical-align: middle;
-}
-
-/* Buttons etc. */
 button {
   margin: 10px;
   padding: 10px 20px;
   cursor: pointer;
+}
+
+/* Um den Zeiger links zu platzieren, packen wir Canvas + Zeiger in einen Container */
+.wrapper {
+  position: relative;
+  display: inline-block; /* damit Container nur so breit wie nötig */
+}
+
+/* Der Zeiger selbst */
+.pointer {
+  position: absolute;
+  left: -25px;    /* etwas links außerhalb des Canvas */
+  top: 50%;       /* vertikal zentrieren */
+  transform: translateY(-50%);
+  width: 0; 
+  height: 0;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  border-right: 20px solid red; 
+  /* Jetzt haben wir ein kleines rotes Dreieck, das auf das Canvas zeigt */
+}
+
+/* Canvas */
+canvas {
+  border: 2px solid #333;
+  display: block;
+}
+
+/* Spielbereich-Container */
+#gameArea {
+  margin-top: 20px;
 }
