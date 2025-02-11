@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Glücksrad</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Glücksrad</h1>
+    <input type="text" id="vorname" placeholder="Vorname">
+    <input type="text" id="nachname" placeholder="Nachname">
+    <button onclick="registerPlayer()">Registrieren</button>
+
+    <div id="game" style="display:none;">
+        <canvas id="wheel" width="400" height="400"></canvas>
+        <div class="arrow">▼</div>
+        <button id="start" onclick="startSpin()">Start</button>
+        <button id="stop" onclick="stopSpin()" disabled>Stop</button>
+        <p id="score">Punkte: 0</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
