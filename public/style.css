@@ -1,3 +1,46 @@
-body { text-align: center; font-family: Arial, sans-serif; }
-canvas { border: 2px solid black; display: block; margin: auto; }
-.arrow { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 30px; color: red; }
+body {
+  font-family: sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+label {
+  margin-right: 10px;
+}
+
+.pointer-left {
+  position: relative;
+  display: inline-block;
+  margin-right: -60px; /* Negative Margin, damit der Pointer "über" dem Canvas ist */
+  vertical-align: middle;
+}
+
+.pointer {
+  width: 30px;
+  height: 10px;
+  background: red;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 100%;
+  /* Das hier kann man weiter stylen, z.B. eine Pfeilspitze basteln */
+}
+
+/* Canvas soll inline mit pointer sein */
+canvas {
+  border: 2px solid #333;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Buttons etc. */
+button {
+  margin: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
