@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <title>Das Dart-Glücksrad</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>Das Dart-Glücksrad</h1>
 
-  <!-- WICHTIG: Ein Formular, damit Enter die Registrierung auslöst -->
   <form id="registerForm" class="register-area">
     <label for="firstname">Vorname:</label>
-    <input type="text" id="firstname" placeholder="Max" required />
+    <input type="text" id="firstname" placeholder="Max" required>
     
     <label for="lastname">Nachname:</label>
-    <input type="text" id="lastname" placeholder="Mustermann" required />
+    <input type="text" id="lastname" placeholder="Mustermann" required>
     
     <button id="registerBtn" class="btn-main" type="submit">Spielen / Fortsetzen</button>
   </form>
@@ -39,10 +38,9 @@
 
   <script src="game.js"></script>
   <script>
-    // Damit das Formular-Submit => registerPlayer() aufruft
-    document.getElementById('registerForm').addEventListener('submit', function(e) {
-      e.preventDefault(); // Verhindert den echten Form-Submit
-      // Ruft die Funktion aus game.js auf
+    // Enter oder Klick => registerPlayer()
+    document.getElementById('registerForm').addEventListener('submit', e=>{
+      e.preventDefault();
       registerPlayer();
     });
   </script>
