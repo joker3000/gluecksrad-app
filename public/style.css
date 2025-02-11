@@ -22,7 +22,7 @@ button {
 
 .pointer {
   position: absolute;
-  left: -20px;  /* links am Canvas */
+  left: -20px;
   top: 50%;
   transform: translateY(-50%);
   width: 0;
