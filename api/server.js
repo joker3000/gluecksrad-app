@@ -7,7 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ✅ Korrektur: SQLite-Datenbank in `/tmp` speichern (weil Vercel nur dort Schreibzugriff erlaubt)
-const dbPath = "/tmp/database.sqlite";
+const dbPath = process.env.NODE_ENV === "production" ? "/tmp/database.sqlite" : "database.sqlite";
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error("Fehler beim Öffnen der SQLite-Datenbank:", err.message);
