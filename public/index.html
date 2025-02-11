@@ -10,10 +10,10 @@
 
   <div>
     <label for="firstname">Vorname:</label>
-    <input type="text" id="firstname" placeholder="Max" />
+    <input type="text" id="firstname" />
     
     <label for="lastname">Nachname:</label>
-    <input type="text" id="lastname" placeholder="Mustermann" />
+    <input type="text" id="lastname" />
     
     <button id="registerBtn">Spielen / Fortsetzen</button>
   </div>
@@ -21,8 +21,8 @@
   <div id="gameArea" style="display:none;">
     <p id="infoText"></p>
 
+    <!-- Canvas + Pointer -->
     <div class="wheel-container">
-      <!-- Marker links, Spitze zeigt nach rechts -->
       <div class="pointer"></div>
       <canvas id="wheel" width="400" height="400"></canvas>
     </div>
@@ -32,7 +32,7 @@
     </p>
 
     <div>
-      <p><strong>Deine Punktzahlen:</strong></p>
+      <p><strong>Spin-Werte (Server-Berechnung via 270°):</strong></p>
       <p>Spin 1: <span id="spin1">-</span></p>
       <p>Spin 2: <span id="spin2">-</span></p>
       <p>Spin 3: <span id="spin3">-</span></p>
