@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Admin Bereich</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1>Admin Bereich</h1>
@@ -11,14 +11,16 @@
   <div id="loginArea">
     <label for="adminUser">Benutzer:</label>
     <input type="text" id="adminUser" placeholder="admin" />
+    
     <label for="adminPass">Passwort:</label>
     <input type="password" id="adminPass" placeholder="secret" />
+    
     <button id="adminLoginBtn">Login</button>
   </div>
 
   <div id="dashboard" style="display:none;">
-    <h2>Spielergebnisse</h2>
-    <table style="margin:0 auto;">
+    <h2>Live-Spielergebnisse (ohne Browserreload)</h2>
+    <table style="margin: 0 auto;">
       <thead>
         <tr>
           <th>Vorname</th>
