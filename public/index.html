@@ -1,24 +1,45 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <title>Glücksrad</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Glücksrad</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <h1>Glücksrad</h1>
-    <input type="text" id="vorname" placeholder="Vorname">
-    <input type="text" id="nachname" placeholder="Nachname">
-    <button onclick="registerPlayer()">Registrieren</button>
+  <h1>Glücksrad</h1>
+  <div>
+    <label for="firstname">Vorname:</label>
+    <input type="text" id="firstname" placeholder="Vorname" />
 
-    <div id="game" style="display:none;">
-        <canvas id="wheel" width="400" height="400"></canvas>
-        <div class="arrow">▼</div>
-        <button id="start" onclick="startSpin()">Start</button>
-        <button id="stop" onclick="stopSpin()" disabled>Stop</button>
-        <p id="score">Punkte: 0</p>
+    <label for="lastname">Nachname:</label>
+    <input type="text" id="lastname" placeholder="Nachname" />
+    <button id="registerBtn">Spielen / Fortsetzen</button>
+  </div>
+
+  <div id="gameArea" style="display:none;">
+    <p id="infoText"></p>
+
+    <!-- Pointer links-mittig, Canvas zentriert -->
+    <div class="pointer-left">
+      <!-- Pfeil oder Marker -->
+      <div class="pointer"></div>
     </div>
 
-    <script src="script.js"></script>
+    <canvas id="wheel" width="400" height="400"></canvas>
+
+    <p>
+      <button id="wheelBtn" disabled>Klicken zum Starten/Stoppen</button>
+    </p>
+
+    <div>
+      <p><strong>Deine Punktzahlen:</strong></p>
+      <p>Spin 1: <span id="spin1">-</span></p>
+      <p>Spin 2: <span id="spin2">-</span></p>
+      <p>Spin 3: <span id="spin3">-</span></p>
+      <p><strong>Gesamt: <span id="totalPoints">0</span></strong></p>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
 </body>
 </html>
