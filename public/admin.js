@@ -1,3 +1,4 @@
+// admin.js
 const adminUser = document.getElementById('adminUser');
 const adminPass = document.getElementById('adminPass');
 const dashboard = document.getElementById('dashboard');
@@ -36,8 +37,8 @@ function loadPlayers(){
     .then(data=>{
       resultsTable.innerHTML='';
       data.players.forEach(p=>{
-        const tr= document.createElement('tr');
-        tr.innerHTML=`
+        const tr=document.createElement('tr');
+        tr.innerHTML= `
           <td>${p.firstname}</td>
           <td>${p.lastname}</td>
           <td>${p.spin1===null?'':p.spin1}</td>
@@ -48,5 +49,5 @@ function loadPlayers(){
         resultsTable.appendChild(tr);
       });
     })
-    .catch(err=>console.error(err));
+    .catch(err=> console.error(err));
 }
