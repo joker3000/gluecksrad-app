@@ -11,19 +11,18 @@
   <div>
     <label for="firstname">Vorname:</label>
     <input type="text" id="firstname" placeholder="Max" />
-
+    
     <label for="lastname">Nachname:</label>
     <input type="text" id="lastname" placeholder="Mustermann" />
-
+    
     <button id="registerBtn">Spielen / Fortsetzen</button>
   </div>
 
-  <!-- Hier das eigentliche Spiel -->
   <div id="gameArea" style="display:none;">
     <p id="infoText"></p>
 
     <div class="wheel-container">
-      <!-- Unser Pointer am linken Rand, Spitze nach rechts -->
+      <!-- Marker links, Spitze zeigt nach rechts -->
       <div class="pointer"></div>
       <canvas id="wheel" width="400" height="400"></canvas>
     </div>
