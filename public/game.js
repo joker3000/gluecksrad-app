@@ -1,4 +1,4 @@
-// HTML-Elemente
+// UI-Elemente
 const firstnameInput = document.getElementById('firstname');
 const lastnameInput = document.getElementById('lastname');
 const registerBtn = document.getElementById('registerBtn');
@@ -15,11 +15,11 @@ const totalPointsDisplay = document.getElementById('totalPoints');
 const canvas = document.getElementById('wheel');
 const ctx = canvas.getContext('2d');
 
-// Spieler-Daten (wird vom Server geladen)
+// Spielzustand
 let player = null;
-let currentSpin = 1;
+let currentSpin = 1; // 1..3
 
-// Glücksrad
+// SEGMENTE
 const SEGMENT_VALUES = [
   0, 0, 0, 0,
   10, 10, 10,
@@ -27,13 +27,13 @@ const SEGMENT_VALUES = [
   50, 100, 200, 400, 600, 800, 1000
 ];
 
-// Einmalig mischen
-function shuffle(array) {
-  for (let i = array.length - 1; i > 0; i--) {
+// Eimalig zufällig mischen
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-  return array;
+  return arr;
 }
 shuffle(SEGMENT_VALUES);
 
@@ -41,15 +41,15 @@ const segmentAngle = (2 * Math.PI) / SEGMENT_VALUES.length;
 const colors = ["#f66", "#6f6", "#66f", "#fa0", "#0af", "#a0f", "#ff6", "#6ff"];
 
 // Drehvariablen
-let angle = 0;      // rad
-let velocity = 0;   // wie schnell sich das Rad dreht
+let angle = 0;       // aktueller Winkel
+let velocity = 0;    // Geschw. (rad/frame)
 let spinning = false;
-let stopping = false; // ob wir gerade im „Abbremsmodus“ sind
+let stopping = false; // sind wir in einer Stopp/Abbrems-Phase?
 
+// Zeichnet das Rad
 function drawWheel() {
   ctx.clearRect(0, 0, 400, 400);
 
-  // 16 Segmente zeichnen
   for (let i = 0; i < SEGMENT_VALUES.length; i++) {
     ctx.beginPath();
     ctx.moveTo(200, 200);
@@ -62,21 +62,19 @@ function drawWheel() {
     ctx.save();
     ctx.translate(200, 200);
     ctx.rotate(i * segmentAngle + segmentAngle / 2);
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "#000";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#000';
     ctx.fillText(`${SEGMENT_VALUES[i]}`, 100, 0);
     ctx.restore();
   }
 }
 
-// Ermittelt den Index, auf den der linke Zeiger zeigt.
-// Canvas-0° = nach rechts, also linke Seite = angle + π.
+// Ermittelt das Segment, das nach links (angle+π) zeigt
 function getSegmentIndex(a) {
-  let raw = a + Math.PI;
-  // Normalisieren [0..2π)
+  let raw = a + Math.PI; // "links"
   raw = (raw % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-  return Math.floor(raw / segmentAngle) % SEGMENT_VALUES.length;
+  return Math.floor(raw / segmentAngle);
 }
 
 // Animationsschleife
@@ -94,15 +92,16 @@ function animate() {
 }
 animate();
 
-// 5° Bounce in die Gegenrichtung, dann finalisieren
+// 5°-Bounce (zurück) => dann finalize
 function doBounceAndFinalize() {
   stopping = true;
-  const steps = 30; // ~0.5 Sek
-  const bounceDeg = 5 * Math.PI / 180; // 5°
+  const steps = 30; // ~ 0.5 Sek
+  const bounceAngle = (5 * Math.PI) / 180; // 5° in rad
   let step = 0;
+
   const bounceInterval = setInterval(() => {
-    // Wir drehen uns minimal zurück => wir gehen "gegen" die aktuelle Drehrichtung (angenommen: clockwise)
-    angle -= bounceDeg / steps;
+    // Wir drehen uns minimal "gegen die bisherige Richtung" => angle -= ...
+    angle -= bounceAngle / steps;
     step++;
     if (step >= steps) {
       clearInterval(bounceInterval);
@@ -113,18 +112,18 @@ function doBounceAndFinalize() {
   }, 1000 / 60);
 }
 
-// Wenn das Rad zum absoluten Stillstand kommt, rufen wir doBounceAndFinalize()
-// => am Ende davon finalizeSpin()
+// Wird aufgerufen, wenn das Rad (nach 3s Abbremsen) auf velocity=0 kommt
 function handleStopComplete() {
-  // velocity = 0
+  velocity = 0;
   doBounceAndFinalize();
 }
 
+// Erst wenn der Bounce vorbei ist, ermitteln wir das Segment
 function finalizeSpin() {
   const idx = getSegmentIndex(angle);
   const points = SEGMENT_VALUES[idx];
 
-  // SpinX eintragen
+  // Spin-Wert lokal eintragen
   if (currentSpin === 1) player.spin1 = points;
   if (currentSpin === 2) player.spin2 = points;
   if (currentSpin === 3) player.spin3 = points;
@@ -134,26 +133,27 @@ function finalizeSpin() {
   const s3 = player.spin3 || 0;
   player.total = s1 + s2 + s3;
 
-  // Speichern via API
+  // Auf Server speichern
   saveSpinResult(currentSpin, points)
     .then(() => {
       showPlayerSpins();
 
+      // Nächster Spin oder Ende
       if (currentSpin < 3) {
         currentSpin++;
         infoText.textContent = `Spin ${currentSpin} bereit`;
         wheelBtn.disabled = false;
       } else {
-        infoText.textContent = `Alle 3 Spins fertig. Gesamt: ${player.total} Punkte.`;
+        infoText.textContent = `Alle 3 Spins beendet. Gesamt: ${player.total} Punkte.`;
         wheelBtn.disabled = true;
       }
     })
-    .catch((err) => {
+    .catch(err => {
       console.error(err);
     });
 }
 
-// 1 & 2 => manueller Stop. 3 => Autostop
+// Spin starten (Spin 1/2 => manuell, Spin 3 => autoStop)
 function startSpin() {
   if (spinning || stopping) return;
   spinning = true;
@@ -161,14 +161,14 @@ function startSpin() {
   infoText.textContent = `Spin ${currentSpin} läuft...`;
 }
 
+// Spin manuell stoppen => 3s Abbremsen => handleStopComplete => Bounce => finalize
 function stopSpin() {
   if (!spinning || stopping) return;
   stopping = true;
   wheelBtn.disabled = true;
 
-  // 3s Abbremsphase
   const initialV = velocity;
-  const steps = 60 * 3;
+  const steps = 60 * 3; // 3s
   let step = 0;
 
   const slowInterval = setInterval(() => {
@@ -176,45 +176,49 @@ function stopSpin() {
     velocity = initialV * (1 - step / steps);
     if (step >= steps) {
       clearInterval(slowInterval);
-      velocity = 0;
       handleStopComplete();
     }
   }, 1000 / 60);
 }
 
+// Spin 3: Autostopp nach 3-7s
 function autoStopSpin() {
   if (!spinning || stopping) return;
   stopping = true;
-  infoText.textContent = `Spin 3 läuft... (Autostopp)`;
+  const randomDelay = Math.random() * 4000 + 3000; // 3..7 Sek
 
-  const randomDelay = Math.random() * 4000 + 3000; // 3..7s
   setTimeout(() => {
     stopSpin();
   }, randomDelay);
 }
 
-// Zeigt aktuelle (lokale) Playerdaten an
-function showPlayerSpins() {
-  spin1Display.textContent = player.spin1 === null ? '-' : player.spin1;
-  spin2Display.textContent = player.spin2 === null ? '-' : player.spin2;
-  spin3Display.textContent = player.spin3 === null ? '-' : player.spin3;
-  totalPointsDisplay.textContent = player.total || 0;
+// Klick auf Start/Stop
+function handleWheelBtnClick() {
+  if (!player) return;
 
-  // Wer schon 3 Spins hat, kann nicht mehr spielen
-  if (player.spin1 !== null && player.spin2 !== null && player.spin3 !== null) {
-    wheelBtn.disabled = true;
-    infoText.textContent = `Du hast bereits 3 Spins gemacht: ${player.total} Punkte.`;
-  } else {
-    // Bestimmen, welcher Spin als nächstes frei ist
-    if (player.spin1 === null) currentSpin = 1;
-    else if (player.spin2 === null) currentSpin = 2;
-    else currentSpin = 3;
-    infoText.textContent = `Spin ${currentSpin} bereit`;
-    wheelBtn.disabled = false;
+  if (currentSpin < 3) {
+    // Spin 1/2 => Klick toggelt Start/Stop
+    if (!spinning && !stopping) {
+      // Start
+      startSpin();
+      wheelBtn.textContent = 'Stop';
+    } else if (spinning && !stopping) {
+      // Stop
+      stopSpin();
+      wheelBtn.textContent = 'Start';
+    }
+  } else if (currentSpin === 3) {
+    // Spin 3 => nur Start, dann Autostopp
+    if (!spinning && !stopping) {
+      startSpin();
+      autoStopSpin();
+      wheelBtn.disabled = true; 
+      wheelBtn.textContent = 'Spin 3 läuft...';
+    }
   }
 }
 
-// Register ruft /api/register auf
+// Registrieren / Weiterspielen
 function registerPlayer() {
   const firstname = firstnameInput.value.trim();
   const lastname = lastnameInput.value.trim();
@@ -228,14 +232,14 @@ function registerPlayer() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ firstname, lastname })
   })
-    .then(res => res.json())
+    .then(r => r.json())
     .then(data => {
       if (data.error) {
         alert(data.error);
         return;
       }
-      player = data.player; // vom Server
-      showPlayerSpins();
+      player = data.player;
+      initFromPlayerData();
       gameArea.style.display = 'block';
     })
     .catch(err => {
@@ -244,7 +248,42 @@ function registerPlayer() {
     });
 }
 
-// Speichert die Punkte per /api/spin
+// Lädt den Zustand aus player => zeigt UI
+function initFromPlayerData() {
+  const { spin1, spin2, spin3, total } = player;
+  spin1Display.textContent = spin1 === null ? '-' : spin1;
+  spin2Display.textContent = spin2 === null ? '-' : spin2;
+  spin3Display.textContent = spin3 === null ? '-' : spin3;
+  totalPointsDisplay.textContent = total || 0;
+
+  // Nächsten Spin bestimmen
+  if (spin1 === null) {
+    currentSpin = 1;
+  } else if (spin2 === null) {
+    currentSpin = 2;
+  } else if (spin3 === null) {
+    currentSpin = 3;
+  } else {
+    // Alle 3 fertig
+    currentSpin = 4; 
+    infoText.textContent = `Alle 3 Spins erledigt, Gesamt: ${total}`;
+    wheelBtn.disabled = true;
+    return;
+  }
+  infoText.textContent = `Spin ${currentSpin} bereit`;
+  wheelBtn.disabled = false;
+  wheelBtn.textContent = 'Start';
+}
+
+// Zeigt nur das neueste (lokale) player-Feld an
+function showPlayerSpins() {
+  spin1Display.textContent = player.spin1 === null ? '-' : player.spin1;
+  spin2Display.textContent = player.spin2 === null ? '-' : player.spin2;
+  spin3Display.textContent = player.spin3 === null ? '-' : player.spin3;
+  totalPointsDisplay.textContent = player.total;
+}
+
+// Speichert Spin in DB
 function saveSpinResult(spinNumber, value) {
   return fetch('/api/spin', {
     method: 'POST',
@@ -255,37 +294,12 @@ function saveSpinResult(spinNumber, value) {
       spinNumber,
       value
     })
-  }).then(res => res.json());
-}
-
-// Klick-Handler für Start/Stop
-function handleWheelButton() {
-  if (!player) return;
-  if (currentSpin === 1 || currentSpin === 2) {
-    // Toggle Start/Stop
-    if (!spinning && !stopping) {
-      // Start
-      startSpin();
-      wheelBtn.textContent = 'Stop';
-    } else if (spinning && !stopping) {
-      // Stop
-      stopSpin();
-      wheelBtn.textContent = 'Start';
-    }
-  } else if (currentSpin === 3) {
-    // Letzter Spin => Autostop
-    if (!spinning && !stopping) {
-      startSpin();
-      autoStopSpin();
-      wheelBtn.disabled = true; 
-      wheelBtn.textContent = 'Spin 3 läuft...';
-    }
-  }
+  }).then(r => r.json());
 }
 
 // Events
 registerBtn.addEventListener('click', registerPlayer);
-wheelBtn.addEventListener('click', handleWheelButton);
+wheelBtn.addEventListener('click', handleWheelBtnClick);
 
-// Erstes Draw
+// Initiales Zeichnen
 drawWheel();
