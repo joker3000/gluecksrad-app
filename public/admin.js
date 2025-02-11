@@ -6,29 +6,29 @@ const loginArea = document.getElementById('loginArea');
 const dashboard = document.getElementById('dashboard');
 const resultsTable = document.getElementById('resultsTable');
 
-adminLoginBtn.addEventListener('click', () => {
+adminLoginBtn.addEventListener('click', ()=>{
   const user = adminUser.value.trim();
   const pass = adminPass.value.trim();
 
-  fetch('/api/admin/login', {
+  fetch('/api/admin/login',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ user, pass })
   })
-    .then(r => {
-      if (!r.ok) throw new Error('Login fehlgeschlagen');
+    .then(r=>{
+      if(!r.ok) throw new Error('Login fehlgeschlagen');
       return r.json();
     })
-    .then(data => {
-      if (data.success) {
+    .then(data=>{
+      if(data.success) {
         loginArea.style.display='none';
         dashboard.style.display='block';
         loadPlayers();
-        // Alle 5s neu laden => "Live"
+        // Alle 5s neu laden => live
         setInterval(loadPlayers, 5000);
       }
     })
-    .catch(err => {
+    .catch(err=>{
       alert(err.message);
     });
 });
@@ -40,7 +40,7 @@ function loadPlayers() {
       resultsTable.innerHTML='';
       data.players.forEach(p=>{
         const tr = document.createElement('tr');
-        tr.innerHTML= `
+        tr.innerHTML=`
           <td>${p.firstname}</td>
           <td>${p.lastname}</td>
           <td>${p.spin1===null?'':p.spin1}</td>
