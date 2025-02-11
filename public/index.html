@@ -2,36 +2,32 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>Glücksrad</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Das Dart-Glücksrad</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Glücksrad</h1>
+  <h1>Das Dart-Glücksrad</h1>
 
-  <div>
+  <form id="registerForm" class="register-area">
     <label for="firstname">Vorname:</label>
-    <input type="text" id="firstname" placeholder="Max" />
+    <input type="text" id="firstname" placeholder="Max" required>
     
     <label for="lastname">Nachname:</label>
-    <input type="text" id="lastname" placeholder="Mustermann" />
+    <input type="text" id="lastname" placeholder="Mustermann" required>
     
-    <button id="registerBtn">Spielen / Fortsetzen</button>
-  </div>
+    <button id="registerBtn" class="btn-main" type="submit">Spielen / Fortsetzen</button>
+  </form>
 
   <div id="gameArea" style="display:none;">
-    <p id="infoText"></p>
+    <p id="infoText" class="info-text"></p>
 
-    <div class="wheel-container">
-      <!-- Pointer rechts, 0° = Canvas-Standard -->
-      <div class="pointer"></div>
-      <canvas id="wheel" width="400" height="400"></canvas>
-    </div>
+    <canvas id="wheel" width="400" height="400"></canvas>
 
     <p>
-      <button id="wheelBtn" disabled>Start / Stop</button>
+      <button id="wheelBtn" class="btn-main" disabled>Start / Stop</button>
     </p>
 
-    <div>
+    <div class="score-board">
       <p><strong>Spin-Werte (Server-Berechnung via 0°):</strong></p>
       <p>Spin 1: <span id="spin1">-</span></p>
       <p>Spin 2: <span id="spin2">-</span></p>
@@ -41,5 +37,12 @@
   </div>
 
   <script src="game.js"></script>
+  <script>
+    // Enter => registerPlayer()
+    document.getElementById('registerForm').addEventListener('submit', e=>{
+      e.preventDefault();
+      registerPlayer();
+    });
+  </script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 {
   "name": "gluecksrad",
   "version": "1.0.0",
-  "description": "Glücksrad-App mit Node.js, Express und SQLite",
+  "description": "Das Dart-Glücksrad - mit Node.js, Express und SQLite",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

@@ -1,14 +1,12 @@
 const path = require('path');
 const Database = require('better-sqlite3');
 
-// Lokal vs. Vercel => /tmp = ephemeral
 const dbPath = process.env.VERCEL
   ? path.join('/tmp', 'gluecksrad.db')
   : 'gluecksrad.db';
 
 const db = new Database(dbPath);
 
-// players
 db.exec(`
   CREATE TABLE IF NOT EXISTS players (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,7 +15,6 @@ db.exec(`
   );
 `);
 
-// spins
 db.exec(`
   CREATE TABLE IF NOT EXISTS spins (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

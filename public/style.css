@@ -1,40 +1,96 @@
 body {
-  font-family: sans-serif;
-  text-align: center;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
   margin: 0;
-  padding: 20px;
+  padding: 0;
+  background: linear-gradient(135deg, #ece9e6, #ffffff);
+  text-align: center;
+}
+
+h1 {
+  margin: 20px;
+  font-size: 2rem;
+  color: #333;
+}
+
+.btn-main {
+  background: #009688;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  margin: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+.btn-main:hover {
+  background: #00796b;
+}
+
+.register-area {
+  margin: 20px auto;
+  display: inline-block;
+  background: #f2f2f2;
+  border-radius: 6px;
+  padding: 15px 25px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+}
+.register-area input {
+  margin: 5px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 label {
-  margin-right: 10px;
+  margin-right: 6px;
+  font-weight: 500;
 }
 
-button {
-  margin: 10px;
-  padding: 10px 20px;
-  cursor: pointer;
-}
-
-/* Container für Canvas + Pointer */
-.wheel-container {
-  position: relative;
-  display: inline-block;
-}
-
-/* Pointer rechts => 0° ist nach rechts in Canvas-Logik */
-.pointer {
-  position: absolute;
-  right: -20px; /* ragt 20px raus */
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0;
-  height: 0;
-  border-top: 12px solid transparent;
-  border-bottom: 12px solid transparent;
-  border-left: 20px solid red; /* Spitze nach links */
+.info-text {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  color: #444;
 }
 
 canvas {
-  border: 2px solid #333;
+  border: 2px solid #555;
   display: block;
+  margin: 0 auto 20px;
+  background: #fff;
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+}
+
+.score-board {
+  display: inline-block;
+  text-align: left;
+  background: #f7f7f7;
+  border-radius: 4px;
+  padding: 10px 20px;
+  box-shadow: 0 0 4px rgba(0,0,0,0.1);
+}
+.score-board p {
+  margin: 5px 0;
+}
+
+/* Admin style */
+table {
+  margin: 20px auto;
+  border-collapse: collapse;
+  width: 80%;
+  max-width: 800px;
+  background: #fafafa;
+  box-shadow: 0 0 6px rgba(0,0,0,0.1);
+}
+table th, table td {
+  padding: 15px 20px;
+  border: 1px solid #ccc;
+  text-align: center;
+}
+table thead {
+  background: #009688;
+  color: white;
+}
+table thead th {
+  font-weight: 600;
 }

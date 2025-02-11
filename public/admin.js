@@ -1,12 +1,11 @@
+// admin.js
 const adminUser = document.getElementById('adminUser');
 const adminPass = document.getElementById('adminPass');
-const adminLoginBtn = document.getElementById('adminLoginBtn');
-
-const loginArea = document.getElementById('loginArea');
 const dashboard = document.getElementById('dashboard');
 const resultsTable = document.getElementById('resultsTable');
+const loginArea = document.getElementById('adminForm');
 
-adminLoginBtn.addEventListener('click', ()=>{
+function adminLogin() {
   const user = adminUser.value.trim();
   const pass = adminPass.value.trim();
 
@@ -20,27 +19,26 @@ adminLoginBtn.addEventListener('click', ()=>{
       return r.json();
     })
     .then(data=>{
-      if(data.success) {
+      if(data.success){
         loginArea.style.display='none';
         dashboard.style.display='block';
         loadPlayers();
-        // Alle 5s neu laden => live
         setInterval(loadPlayers, 5000);
       }
     })
     .catch(err=>{
       alert(err.message);
     });
-});
+}
 
-function loadPlayers() {
+function loadPlayers(){
   fetch('/api/admin/players')
     .then(r=>r.json())
     .then(data=>{
       resultsTable.innerHTML='';
       data.players.forEach(p=>{
-        const tr = document.createElement('tr');
-        tr.innerHTML=`
+        const tr=document.createElement('tr');
+        tr.innerHTML= `
           <td>${p.firstname}</td>
           <td>${p.lastname}</td>
           <td>${p.spin1===null?'':p.spin1}</td>
@@ -51,5 +49,5 @@ function loadPlayers() {
         resultsTable.appendChild(tr);
       });
     })
-    .catch(err=>console.error(err));
+    .catch(err=> console.error(err));
 }
