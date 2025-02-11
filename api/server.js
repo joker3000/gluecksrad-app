@@ -11,8 +11,7 @@ const PORT = process.env.PORT || 3000;
 const dbPath = process.env.NODE_ENV === "production" ? "/tmp/database.sqlite" : "database.sqlite";
 console.log("Verwendeter Datenbankpfad:", dbPath);
 
-app.use(cors());
-app.use(express.json());
+app.use(cors({ origin: "https://glueckrad-app.vercel.app" }));app.use(express.json());
 app.use(express.static("public"));
 
 // Prüfen, ob die Datei existiert, wenn nicht, dann neu erstellen
