@@ -1,7 +1,6 @@
 {
-  "name": "dgr-gluecksrad",
+  "name": "gluecksrad-acme",
   "version": "1.0.0",
-  "description": "Glücksrad mit MS-Login, Docker, Nginx, Certbot, SQLite, Admin",
   "scripts": {
     "start": "node server.js"
   },

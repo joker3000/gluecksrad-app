@@ -26,11 +26,10 @@ const oidcStrategy = new OIDCStrategy({
     scope: ["openid", "profile", "email"]
   },
   (iss, sub, profile, accessToken, refreshToken, params, done) => {
-    if(!profile.oid) {
+    if (!profile.oid) {
       return done(new Error("No OID in profile"), null);
     }
     const email = profile._json?.preferred_username || "";
-    // Mark user as admin if email matches .env
     const isAdmin = (email.toLowerCase() === adminEmail.toLowerCase());
 
     const user = {

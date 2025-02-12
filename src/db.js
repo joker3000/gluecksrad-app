@@ -1,10 +1,10 @@
 const path = require('path');
 const Database = require('better-sqlite3');
 
+// store DB in /app/database
 const dbPath = path.join(__dirname, 'database', 'gluecksrad.db');
 const db = new Database(dbPath);
 
-// players table
 db.exec(`
 CREATE TABLE IF NOT EXISTS players (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS players (
   familyName TEXT,
   displayName TEXT,
   username TEXT,
-  isAdmin BOOLEAN DEFAULT 0,
   totalScore INTEGER DEFAULT 0,
   spin1 INTEGER,
   spin2 INTEGER,
