@@ -1,5 +1,6 @@
 const express = require("express");
 const session = require("express-session");
+const path = require("path");
 const { getAuthUrl, logout, ensureAuthenticated, pca } = require("./auth");
 
 const app = express();
@@ -13,6 +14,11 @@ app.use(session({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Root-Route => Zeigt `index.html`
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 // Login-Route → Weiterleitung zu Microsoft
 app.get("/auth/login", async (req, res) => {
@@ -35,7 +41,7 @@ app.get("/auth/callback", async (req, res) => {
         });
 
         req.session.account = tokenResponse.account;
-        res.redirect("/game.html"); // Nach Login zum Spiel
+        res.redirect("/game.html");
     } catch (err) {
         console.error("Callback-Fehler:", err);
         res.status(500).send("Fehler beim Auth-Callback.");
@@ -45,22 +51,13 @@ app.get("/auth/callback", async (req, res) => {
 // Logout
 app.get("/auth/logout", logout);
 
-// Geschützte Route → Nur eingeloggt zugänglich
+// API-Route: Muss eingeloggt sein
 app.get("/api/spin", ensureAuthenticated, (req, res) => {
     res.json({ success: true, user: req.session.account });
 });
 
-// Admin-Check anhand `ADMIN_EMAIL`
-app.get("/api/admin", ensureAuthenticated, (req, res) => {
-    const userEmail = req.session.account?.username || "";
-    if (userEmail.toLowerCase() !== process.env.ADMIN_EMAIL.toLowerCase()) {
-        return res.status(403).send("Forbidden");
-    }
-    res.json({ success: true, message: "Admin-Dashboard" });
-});
-
-// Statische Dateien bereitstellen
-app.use("/", express.static("public"));
+// Statische Dateien bereitstellen (z. B. `game.html`, `style.css`)
+app.use("/", express.static(path.join(__dirname, "public")));
 
 // Server für Vercel exportieren
 module.exports = app;
