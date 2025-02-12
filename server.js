@@ -1,10 +1,10 @@
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
+const db = require("./db");
 const { getAuthUrl, logout, ensureAuthenticated, pca } = require("./auth");
 
 const app = express();
-
 app.use(session({
     secret: "SUPER-SECRET-STRING",
     resave: false,
@@ -14,14 +14,8 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Sicherstellen, dass statische Dateien geladen werden
-app.use(express.static(path.join(__dirname, "public"))); // Standard-Pfad
-app.use("/public", express.static(path.join(__dirname, "public"))); // Fix für Pfade
-
-// Root-Route explizit definieren
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+// Statische Dateien aus `public/` bereitstellen
+app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/auth/login", async (req, res) => {
     try {
@@ -42,6 +36,22 @@ app.get("/auth/callback", async (req, res) => {
         });
 
         req.session.account = tokenResponse.account;
+        const player = db.prepare(`SELECT * FROM players WHERE oid=?`).get(tokenResponse.account.oid);
+
+        if (!player) {
+            const wheelConfig = JSON.stringify([...SEGMENT_VALUES].sort(() => Math.random() - 0.5));
+            db.prepare(`
+                INSERT INTO players (oid, givenName, familyName, displayName, username, wheelConfig)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `).run(
+                tokenResponse.account.oid,
+                tokenResponse.account.givenName || "",
+                tokenResponse.account.familyName || "",
+                tokenResponse.account.displayName || "",
+                tokenResponse.account.username || "",
+                wheelConfig
+            );
+        }
         res.redirect("/game.html");
     } catch (err) {
         console.error("Callback-Fehler:", err);
@@ -49,20 +59,13 @@ app.get("/auth/callback", async (req, res) => {
     }
 });
 
-app.get("/auth/logout", logout);
-
-// API-Route: Nur eingeloggte Nutzer dürfen spielen
-app.get("/api/spin", ensureAuthenticated, (req, res) => {
-    res.json({ success: true, user: req.session.account });
-});
-
-// Admin-Route mit Schutz
 app.get("/api/admin", ensureAuthenticated, (req, res) => {
-    const userEmail = req.session.account?.username || "";
-    if (userEmail.toLowerCase() !== process.env.ADMIN_EMAIL.toLowerCase()) {
+    if (req.session.account.username.toLowerCase() !== process.env.ADMIN_EMAIL.toLowerCase()) {
         return res.status(403).send("Forbidden");
     }
-    res.json({ success: true, message: "Admin-Dashboard" });
+    const players = db.prepare("SELECT * FROM players ORDER BY totalScore DESC").all();
+    res.json({ players });
 });
 
+app.get("/auth/logout", logout);
 module.exports = app;

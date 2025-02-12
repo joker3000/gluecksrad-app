@@ -7,11 +7,24 @@
 </head>
 <body>
   <h1>Dart-Glücksrad - Spiel</h1>
+  
+  <!-- Anzeige für den aktuellen Status -->
   <div id="infoText">Spin 1 bereit</div>
-  <div id="spinResults"></div>
+
+  <!-- Spin-Ergebnisse -->
+  <div id="spinResults">
+    <p>Spin 1: <span id="result1">-</span></p>
+    <p>Spin 2: <span id="result2">-</span></p>
+    <p>Spin 3: <span id="result3">-</span></p>
+    <p><strong>Gesamtpunkte: <span id="totalScore">0</span></strong></p>
+  </div>
+
+  <!-- Glücksrad -->
   <canvas id="wheel" width="400" height="400"></canvas>
+
+  <!-- Steuerung -->
   <p><button id="spinBtn">Start</button></p>
-  <p><button onclick="location.href='/auth/logout'">Logout</button></p>
+  <p><button id="logoutBtn" onclick="location.href='/auth/logout'">Logout</button></p>
 
   <script src="game.js"></script>
 </body>

@@ -1,15 +1,18 @@
 console.log("game.js loaded");
 
-// HTML-Elemente abrufen
+// Elemente abrufen
 const spinBtn = document.getElementById("spinBtn");
 const infoText = document.getElementById("infoText");
 const spinResults = document.getElementById("spinResults");
+const result1 = document.getElementById("result1");
+const result2 = document.getElementById("result2");
+const result3 = document.getElementById("result3");
+const totalScoreElement = document.getElementById("totalScore");
+
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 
-// Glücksrad-Segmente (16 Stück)
-const SEGMENT_VALUES = [0, 0, 0, 0, 10, 10, 10, 25, 25, 50, 100, 200, 400, 600, 800, 1000];
-
+let wheelConfig = []; // Speichert die zufällige Anordnung der Glücksrad-Zahlen
 let angle = 0;
 let velocity = 0;
 let spinning = false;
@@ -19,24 +22,23 @@ let currentSpin = 1;
 let totalScore = 0;
 let spinScores = [null, null, null];
 
-function animate() {
-  requestAnimationFrame(animate);
-  if (spinning) angle += velocity;
-
-  ctx.save();
-  ctx.translate(200, 200);
-  ctx.rotate(angle * Math.PI / 180);
-  ctx.translate(-200, -200);
-  drawWheel();
-  ctx.restore();
+// Glücksrad-Zahlen vom Server abrufen
+function fetchWheelConfig() {
+  fetch("/api/wheel-config")
+    .then(response => response.json())
+    .then(data => {
+      wheelConfig = data.wheelConfig;
+      console.log("Rad-Konfiguration:", wheelConfig);
+      drawWheel();
+    })
+    .catch(error => console.error("Fehler beim Laden des Rades:", error));
 }
-animate();
 
+// Glücksrad zeichnen
 function drawWheel() {
   ctx.clearRect(0, 0, 400, 400);
-  const segCount = SEGMENT_VALUES.length;
+  const segCount = wheelConfig.length;
   const segAngle = 2 * Math.PI / segCount;
-  ctx.font = "bold 20px sans-serif";
 
   for (let i = 0; i < segCount; i++) {
     ctx.beginPath();
@@ -52,7 +54,7 @@ function drawWheel() {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#000";
-    ctx.fillText(String(SEGMENT_VALUES[i]), 130, 0);
+    ctx.fillText(String(wheelConfig[i]), 130, 0);
     ctx.restore();
   }
 
@@ -71,11 +73,13 @@ function drawWheel() {
   }
 }
 
+// Zufällige Farben für Segmente
 function randomColor(i) {
   const colors = ["red", "blue", "green", "orange", "purple", "yellow", "cyan", "pink"];
   return colors[i % colors.length];
 }
 
+// Spin starten
 function startSpin() {
   if (spinning || stopping) return;
   spinning = true;
@@ -85,6 +89,7 @@ function startSpin() {
   spinBtn.textContent = "Stop";
 }
 
+// Spin stoppen
 function stopSpin() {
   if (!spinning || stopping) return;
   stopping = true;
@@ -104,6 +109,7 @@ function stopSpin() {
   }, 1000 / 60);
 }
 
+// Back-Bounce für realistisches Stoppen (-5°)
 function doBounce() {
   stopping = true;
   const steps = 30;
@@ -122,18 +128,20 @@ function doBounce() {
   }, 1000 / 60);
 }
 
+// Finales Ergebnis berechnen
 function finalizeSpin() {
   let finalAngle = (angle % 360 + 360) % 360;
-  const segCount = SEGMENT_VALUES.length;
+  const segCount = wheelConfig.length;
   const segAngle = 360 / segCount;
   let idx = Math.floor(finalAngle / segAngle);
   if (idx >= segCount) idx = segCount - 1;
   markerIndex = idx;
 
-  const spinValue = SEGMENT_VALUES[idx];
+  const spinValue = wheelConfig[idx];
   spinScores[currentSpin - 1] = spinValue;
   totalScore = spinScores.reduce((a, b) => a + (b || 0), 0);
   updateSpinResults();
+
   infoText.textContent = `Spin ${currentSpin} Ergebnis: ${spinValue}.`;
 
   if (currentSpin < 3) {
@@ -160,6 +168,7 @@ function finalizeSpin() {
   }
 }
 
+// Spin-Button-Logik
 function handleSpin() {
   if (currentSpin < 3) {
     if (!spinning && !stopping) {
@@ -183,16 +192,12 @@ function handleSpin() {
 
 spinBtn.addEventListener("click", handleSpin);
 
+// Spin-Ergebnisse anzeigen
 function updateSpinResults() {
-  spinResults.innerHTML = `
-    <p>Spin 1: ${spinScores[0] !== null ? spinScores[0] : "-"}</p>
-    <p>Spin 2: ${spinScores[1] !== null ? spinScores[1] : "-"}</p>
-    <p>Spin 3: ${spinScores[2] !== null ? spinScores[2] : "-"}</p>
-    <p><strong>Gesamtpunkte: ${totalScore}</strong></p>
-  `;
+  result1.textContent = spinScores[0] !== null ? spinScores[0] : "-";
+  result2.textContent = spinScores[1] !== null ? spinScores[1] : "-";
+  result3.textContent = spinScores[2] !== null ? spinScores[2] : "-";
+  totalScoreElement.textContent = totalScore;
 }
 
-infoText.textContent = `Spin ${currentSpin} bereit`;
-spinBtn.disabled = false;
-spinBtn.textContent = "Start";
-updateSpinResults();
+fetchWheelConfig();
