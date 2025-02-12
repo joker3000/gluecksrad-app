@@ -5,7 +5,6 @@ const { getAuthUrl, logout, ensureAuthenticated, pca } = require("./auth");
 
 const app = express();
 
-// Session-Middleware für Express
 app.use(session({
     secret: "SUPER-SECRET-STRING",
     resave: false,
@@ -15,12 +14,10 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Root-Route => Zeigt `index.html`
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Login-Route → Weiterleitung zu Microsoft
 app.get("/auth/login", async (req, res) => {
     try {
         const authUrl = await getAuthUrl();
@@ -31,7 +28,6 @@ app.get("/auth/login", async (req, res) => {
     }
 });
 
-// Auth-Callback von Microsoft
 app.get("/auth/callback", async (req, res) => {
     try {
         const tokenResponse = await pca.acquireTokenByCode({
@@ -48,16 +44,20 @@ app.get("/auth/callback", async (req, res) => {
     }
 });
 
-// Logout
 app.get("/auth/logout", logout);
 
-// API-Route: Muss eingeloggt sein
 app.get("/api/spin", ensureAuthenticated, (req, res) => {
     res.json({ success: true, user: req.session.account });
 });
 
-// Statische Dateien bereitstellen (z. B. `game.html`, `style.css`)
-app.use("/", express.static(path.join(__dirname, "public")));
+app.get("/api/admin", ensureAuthenticated, (req, res) => {
+    const userEmail = req.session.account?.username || "";
+    if (userEmail.toLowerCase() !== process.env.ADMIN_EMAIL.toLowerCase()) {
+        return res.status(403).send("Forbidden");
+    }
+    res.json({ success: true, message: "Admin-Dashboard" });
+});
 
-// Server für Vercel exportieren
+app.use("/", express.static("public"));
+
 module.exports = app;

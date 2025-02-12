@@ -1,16 +1,14 @@
 console.log("game.js loaded");
 
-const spinBtn = document.getElementById('spinBtn');
-const infoText = document.getElementById('infoText');
-const canvas = document.getElementById('wheel');
-const ctx = canvas.getContext('2d');
+// HTML-Elemente abrufen
+const spinBtn = document.getElementById("spinBtn");
+const infoText = document.getElementById("infoText");
+const spinResults = document.getElementById("spinResults");
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
 
-const SEGMENT_VALUES = [
-  0, 0, 0, 0,
-  10, 10, 10,
-  25, 25,
-  50, 100, 200, 400, 600, 800, 1000
-];
+// Glücksrad-Segmente (16 Stück)
+const SEGMENT_VALUES = [0, 0, 0, 0, 10, 10, 10, 25, 25, 50, 100, 200, 400, 600, 800, 1000];
 
 let angle = 0;
 let velocity = 0;
@@ -18,6 +16,8 @@ let spinning = false;
 let stopping = false;
 let markerIndex = null;
 let currentSpin = 1;
+let totalScore = 0;
+let spinScores = [null, null, null];
 
 function animate() {
   requestAnimationFrame(animate);
@@ -34,10 +34,9 @@ animate();
 
 function drawWheel() {
   ctx.clearRect(0, 0, 400, 400);
-
   const segCount = SEGMENT_VALUES.length;
   const segAngle = 2 * Math.PI / segCount;
-  ctx.font = 'bold 20px sans-serif';
+  ctx.font = "bold 20px sans-serif";
 
   for (let i = 0; i < segCount; i++) {
     ctx.beginPath();
@@ -50,9 +49,9 @@ function drawWheel() {
     ctx.save();
     ctx.translate(200, 200);
     ctx.rotate(i * segAngle + segAngle / 2);
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#000';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#000";
     ctx.fillText(String(SEGMENT_VALUES[i]), 130, 0);
     ctx.restore();
   }
@@ -63,10 +62,10 @@ function drawWheel() {
     ctx.rotate(markerIndex * segAngle + segAngle / 2);
     ctx.beginPath();
     ctx.arc(130, 0, 10, 0, 2 * Math.PI);
-    ctx.fillStyle = 'red';
+    ctx.fillStyle = "red";
     ctx.fill();
     ctx.lineWidth = 2;
-    ctx.strokeStyle = 'black';
+    ctx.strokeStyle = "black";
     ctx.stroke();
     ctx.restore();
   }
@@ -132,6 +131,9 @@ function finalizeSpin() {
   markerIndex = idx;
 
   const spinValue = SEGMENT_VALUES[idx];
+  spinScores[currentSpin - 1] = spinValue;
+  totalScore = spinScores.reduce((a, b) => a + (b || 0), 0);
+  updateSpinResults();
   infoText.textContent = `Spin ${currentSpin} Ergebnis: ${spinValue}.`;
 
   if (currentSpin < 3) {
@@ -142,17 +144,17 @@ function finalizeSpin() {
       spinning = false;
       stopping = false;
       spinBtn.disabled = false;
-      spinBtn.textContent = 'Start';
+      spinBtn.textContent = "Start";
       infoText.textContent = `Spin ${currentSpin} bereit`;
       markerIndex = null;
     }, 3000);
   } else {
     setTimeout(() => {
-      infoText.textContent = `3. Spin fertig.`;
+      infoText.textContent = `Spiel beendet. Deine Gesamtpunkte: ${totalScore}`;
       spinBtn.textContent = "Logout";
-      spinBtn.removeEventListener('click', handleSpin);
-      spinBtn.addEventListener('click', () => {
-        location.href = '/auth/logout';
+      spinBtn.removeEventListener("click", handleSpin);
+      spinBtn.addEventListener("click", () => {
+        location.href = "/auth/logout";
       });
     }, 3000);
   }
@@ -162,7 +164,7 @@ function handleSpin() {
   if (currentSpin < 3) {
     if (!spinning && !stopping) {
       startSpin();
-      spinBtn.textContent = 'Stop';
+      spinBtn.textContent = "Stop";
     } else if (spinning && !stopping) {
       stopSpin();
       spinBtn.disabled = true;
@@ -171,7 +173,7 @@ function handleSpin() {
     if (!spinning && !stopping) {
       startSpin();
       spinBtn.disabled = true;
-      spinBtn.textContent = 'Stoppt automatisch';
+      spinBtn.textContent = "Stoppt automatisch";
       setTimeout(() => {
         stopSpin();
       }, Math.random() * 4000 + 3000);
@@ -179,8 +181,18 @@ function handleSpin() {
   }
 }
 
-spinBtn.addEventListener('click', handleSpin);
+spinBtn.addEventListener("click", handleSpin);
+
+function updateSpinResults() {
+  spinResults.innerHTML = `
+    <p>Spin 1: ${spinScores[0] !== null ? spinScores[0] : "-"}</p>
+    <p>Spin 2: ${spinScores[1] !== null ? spinScores[1] : "-"}</p>
+    <p>Spin 3: ${spinScores[2] !== null ? spinScores[2] : "-"}</p>
+    <p><strong>Gesamtpunkte: ${totalScore}</strong></p>
+  `;
+}
 
 infoText.textContent = `Spin ${currentSpin} bereit`;
 spinBtn.disabled = false;
-spinBtn.textContent = 'Start';
+spinBtn.textContent = "Start";
+updateSpinResults();
