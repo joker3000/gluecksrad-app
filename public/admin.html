@@ -1,46 +1,29 @@
+<!-- admin.html -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <title>Admin Bereich</title>
+  <meta charset="UTF-8"/>
+  <title>Admin Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Admin Bereich</h1>
-
-  <form id="adminForm" class="register-area">
-    <label for="adminUser">User:</label>
-    <input type="text" id="adminUser" placeholder="admin" required>
-    
-    <label for="adminPass">Pass:</label>
-    <input type="password" id="adminPass" placeholder="secret" required>
-    
-    <button id="adminLoginBtn" class="btn-main" type="submit">Login</button>
-  </form>
-
-  <div id="dashboard" style="display:none;">
-    <h2>Spielergebnisse (Live)</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Vorname</th>
-          <th>Nachname</th>
-          <th>Spin1</th>
-          <th>Spin2</th>
-          <th>Spin3</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody id="resultsTable"></tbody>
-    </table>
-  </div>
+  <h1>Admin</h1>
+  <p>Nur ADMIN_EMAIL darf das sehen.</p>
+  <button onclick="location.href='/auth/logout'">Logout</button>
+  <table>
+    <thead>
+      <tr>
+        <th>OID</th>
+        <th>GivenName</th>
+        <th>FamilyName</th>
+        <th>DisplayName</th>
+        <th>Username</th>
+        <th>Score</th>
+      </tr>
+    </thead>
+    <tbody id="results"></tbody>
+  </table>
 
   <script src="admin.js"></script>
-  <script>
-    document.getElementById('adminForm').addEventListener('submit', e=>{
-      e.preventDefault();
-      adminLogin();
-    });
-  </script>
 </body>
 </html>

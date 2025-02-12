@@ -1,53 +1,28 @@
 // admin.js
-const adminUser = document.getElementById('adminUser');
-const adminPass = document.getElementById('adminPass');
-const dashboard = document.getElementById('dashboard');
-const resultsTable = document.getElementById('resultsTable');
-const loginArea = document.getElementById('adminForm');
-
-function adminLogin() {
-  const user = adminUser.value.trim();
-  const pass = adminPass.value.trim();
-
-  fetch('/api/admin/login',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ user, pass })
-  })
+function loadPlayers(){
+  fetch('/api/admin/players')
     .then(r=>{
-      if(!r.ok) throw new Error('Login fehlgeschlagen');
+      if(!r.ok) throw new Error("Not admin or not logged in");
       return r.json();
     })
     .then(data=>{
-      if(data.success){
-        loginArea.style.display='none';
-        dashboard.style.display='block';
-        loadPlayers();
-        setInterval(loadPlayers, 5000);
-      }
-    })
-    .catch(err=>{
-      alert(err.message);
-    });
-}
-
-function loadPlayers(){
-  fetch('/api/admin/players')
-    .then(r=>r.json())
-    .then(data=>{
-      resultsTable.innerHTML='';
-      data.players.forEach(p=>{
-        const tr=document.createElement('tr');
-        tr.innerHTML= `
-          <td>${p.firstname}</td>
-          <td>${p.lastname}</td>
-          <td>${p.spin1===null?'':p.spin1}</td>
-          <td>${p.spin2===null?'':p.spin2}</td>
-          <td>${p.spin3===null?'':p.spin3}</td>
-          <td><strong>${p.total}</strong></td>
+      const results = data.players;
+      const tbl = document.getElementById('results');
+      tbl.innerHTML='';
+      results.forEach(p=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML=`
+          <td>${p.oid}</td>
+          <td>${p.givenName}</td>
+          <td>${p.familyName}</td>
+          <td>${p.displayName}</td>
+          <td>${p.username}</td>
+          <td>${p.totalScore}</td>
         `;
-        resultsTable.appendChild(tr);
+        tbl.appendChild(tr);
       });
     })
-    .catch(err=> console.error(err));
+    .catch(err=>console.error(err));
 }
+setInterval(loadPlayers, 5000);
+loadPlayers();
