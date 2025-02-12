@@ -6,16 +6,24 @@ const { getAuthUrl, logout, ensureAuthenticated, pca } = require("./auth");
 
 const app = express();
 
-// ✅ Session-Management
+// ✅ Session-Management für Authentifizierung & API-Calls
 app.use(session({
     secret: "SUPER-SECRET-STRING",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } // `true` für HTTPS
+    cookie: { secure: false } // Für HTTPS setzen auf `true`
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// ✅ Middleware für API-Authentifizierung
+function ensureAuthenticatedAPI(req, res, next) {
+    if (!req.session.account) {
+        return res.status(401).json({ error: "Nicht eingeloggt" });
+    }
+    next();
+}
 
 // ✅ Auth-Routen für Microsoft Login
 app.get("/auth/login", async (req, res) => {
@@ -41,7 +49,7 @@ app.get("/auth/callback", async (req, res) => {
         // Prüfen, ob Spieler bereits existiert
         let player = db.prepare("SELECT * FROM players WHERE oid=?").get(tokenResponse.account.oid);
         if (!player) {
-            // Zufällige Rad-Konfiguration für neuen Spieler
+            // Zufällige Rad-Konfiguration für neuen Spieler speichern
             const wheelConfig = JSON.stringify([...Array(16).keys()].map(i => i * 50).sort(() => Math.random() - 0.5));
 
             db.prepare(`
@@ -65,14 +73,6 @@ app.get("/auth/callback", async (req, res) => {
 
 app.get("/auth/logout", logout);
 
-// ✅ Middleware für API-Authentifizierung
-function ensureAuthenticatedAPI(req, res, next) {
-    if (!req.session.account) {
-        return res.status(401).json({ error: "Nicht eingeloggt" });
-    }
-    next();
-}
-
 // ✅ Admin-Panel API (Live-Spieler-Daten)
 app.get("/api/admin", ensureAuthenticatedAPI, (req, res) => {
     if (req.session.account.username.toLowerCase() !== process.env.ADMIN_EMAIL.toLowerCase()) {
@@ -82,9 +82,9 @@ app.get("/api/admin", ensureAuthenticatedAPI, (req, res) => {
     res.json({ players });
 });
 
-// ✅ Spiel-Rad-Daten abrufen (z. B. Rad-Konfiguration für einen Spieler)
+// ✅ FIX: Route für Glücksrad-Konfiguration pro Spieler
 app.get("/api/wheel-config", ensureAuthenticatedAPI, (req, res) => {
-    const player = db.prepare(`SELECT * FROM players WHERE oid=?`).get(req.session.account.oid);
+    const player = db.prepare("SELECT * FROM players WHERE oid=?").get(req.session.account.oid);
     if (!player) {
         return res.status(404).json({ error: "Spieler nicht gefunden" });
     }
