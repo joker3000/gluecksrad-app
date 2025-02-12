@@ -1,50 +1,41 @@
-const passport = require("passport");
-const { OIDCStrategy } = require("passport-azure-ad");
+const msal = require("@azure/msal-node");
 
-const tenantID = process.env.AZURE_TENANT_ID;
-const clientID = process.env.AZURE_CLIENT_ID;
-const clientSecret = process.env.AZURE_CLIENT_SECRET;
-const redirectURI = process.env.REDIRECT_URI || "https://dgr.edui.ch/auth/callback";
-const adminEmail = process.env.ADMIN_EMAIL || "";
-
-const authorityHost = "https://login.microsoftonline.com";
-
-// Passport session
-passport.serializeUser((user, done) => {
-  done(null, user);
-});
-passport.deserializeUser((obj, done) => {
-  done(null, obj);
-});
-
-const oidcStrategy = new OIDCStrategy({
-    identityMetadata: `${authorityHost}/${tenantID}/v2.0/.well-known/openid-configuration`,
-    clientID,
-    responseType: "code",
-    responseMode: "query",
-    redirectUrl: redirectURI,
-    clientSecret,
-    scope: ["openid", "profile", "email"]
-  },
-  (iss, sub, profile, accessToken, refreshToken, params, done) => {
-    if (!profile.oid) {
-      return done(new Error("No OID in profile"), null);
+// MSAL Konfiguration
+const msalConfig = {
+    auth: {
+        clientId: process.env.AZURE_CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}`,
+        clientSecret: process.env.AZURE_CLIENT_SECRET
+    },
+    system: {
+        loggerOptions: { loggerCallback: () => {} }
     }
-    const email = profile._json?.preferred_username || "";
-    const isAdmin = (email.toLowerCase() === adminEmail.toLowerCase());
+};
 
-    const user = {
-      oid: profile.oid,
-      displayName: profile.displayName,
-      givenName: profile.name?.givenName,
-      familyName: profile.name?.familyName,
-      username: email,
-      isAdmin
-    };
-    return done(null, user);
-  }
-);
+// MSAL Client für Authentifizierung
+const pca = new msal.ConfidentialClientApplication(msalConfig);
 
-passport.use(oidcStrategy);
+// Auth-URL generieren (OAuth2 Authorization Code Flow)
+function getAuthUrl() {
+    return pca.getAuthCodeUrl({
+        scopes: ["openid", "profile", "email"],
+        redirectUri: process.env.REDIRECT_URI
+    });
+}
 
-module.exports = passport;
+// Logout
+function logout(req, res) {
+    req.session.destroy(() => {
+        res.redirect("/");
+    });
+}
+
+// Middleware: Prüft, ob User eingeloggt ist
+function ensureAuthenticated(req, res, next) {
+    if (req.session.account) {
+        return next();
+    }
+    res.redirect("/auth/login");
+}
+
+module.exports = { getAuthUrl, logout, ensureAuthenticated, pca };
