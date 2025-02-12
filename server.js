@@ -14,6 +14,11 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Sicherstellen, dass statische Dateien geladen werden
+app.use(express.static(path.join(__dirname, "public"))); // Standard-Pfad
+app.use("/public", express.static(path.join(__dirname, "public"))); // Fix für Pfade
+
+// Root-Route explizit definieren
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
@@ -46,10 +51,12 @@ app.get("/auth/callback", async (req, res) => {
 
 app.get("/auth/logout", logout);
 
+// API-Route: Nur eingeloggte Nutzer dürfen spielen
 app.get("/api/spin", ensureAuthenticated, (req, res) => {
     res.json({ success: true, user: req.session.account });
 });
 
+// Admin-Route mit Schutz
 app.get("/api/admin", ensureAuthenticated, (req, res) => {
     const userEmail = req.session.account?.username || "";
     if (userEmail.toLowerCase() !== process.env.ADMIN_EMAIL.toLowerCase()) {
@@ -57,7 +64,5 @@ app.get("/api/admin", ensureAuthenticated, (req, res) => {
     }
     res.json({ success: true, message: "Admin-Dashboard" });
 });
-
-app.use("/", express.static("public"));
 
 module.exports = app;
