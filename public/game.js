@@ -1,13 +1,10 @@
-// game.js
 console.log("game.js loaded");
 
-// Glücksrad-Elemente
 const spinBtn = document.getElementById('spinBtn');
 const infoText = document.getElementById('infoText');
 const canvas = document.getElementById('wheel');
 const ctx = canvas.getContext('2d');
 
-// Glücksrad-Segmente (16 Stück)
 const SEGMENT_VALUES = [
   0, 0, 0, 0,
   10, 10, 10,
@@ -15,14 +12,13 @@ const SEGMENT_VALUES = [
   50, 100, 200, 400, 600, 800, 1000
 ];
 
-let angle = 0;  // Winkel für das Rad
-let velocity = 0; // Drehgeschwindigkeit
+let angle = 0;
+let velocity = 0;
 let spinning = false;
 let stopping = false;
 let markerIndex = null;
 let currentSpin = 1;
 
-// Animationsloop für das Rad
 function animate() {
   requestAnimationFrame(animate);
   if (spinning) angle += velocity;
@@ -36,7 +32,6 @@ function animate() {
 }
 animate();
 
-// Zeichne das Glücksrad
 function drawWheel() {
   ctx.clearRect(0, 0, 400, 400);
 
@@ -52,7 +47,6 @@ function drawWheel() {
     ctx.fill();
     ctx.stroke();
 
-    // Text anzeigen
     ctx.save();
     ctx.translate(200, 200);
     ctx.rotate(i * segAngle + segAngle / 2);
@@ -63,7 +57,6 @@ function drawWheel() {
     ctx.restore();
   }
 
-  // Roter Marker (zeigt Endposition an)
   if (markerIndex !== null) {
     ctx.save();
     ctx.translate(200, 200);
@@ -79,28 +72,26 @@ function drawWheel() {
   }
 }
 
-// Zufällige Farben für Segmente
 function randomColor(i) {
   const colors = ["red", "blue", "green", "orange", "purple", "yellow", "cyan", "pink"];
   return colors[i % colors.length];
 }
 
-// **Startet den Spin**
 function startSpin() {
   if (spinning || stopping) return;
   spinning = true;
-  velocity = Math.random() * 3 + 3; // Drehgeschwindigkeit zufällig zwischen 3° und 6° pro Frame
+  velocity = Math.random() * 3 + 3;
   infoText.textContent = `Spin ${currentSpin} läuft...`;
   markerIndex = null;
+  spinBtn.textContent = "Stop";
 }
 
-// **Stoppt den Spin**
 function stopSpin() {
   if (!spinning || stopping) return;
   stopping = true;
   spinBtn.disabled = true;
   const initVelocity = velocity;
-  const steps = 60 * 3; // Langsam in 3 Sekunden stoppen
+  const steps = 60 * 3;
   let step = 0;
 
   const slowDown = setInterval(() => {
@@ -114,12 +105,11 @@ function stopSpin() {
   }, 1000 / 60);
 }
 
-// **Back-Bounce (-5°), um realistisch zu stoppen**
 function doBounce() {
   stopping = true;
   const steps = 30;
   let step = 0;
-  const bounceAngle = 5; // Kleiner Rücksprung
+  const bounceAngle = 5;
 
   const bounce = setInterval(() => {
     step++;
@@ -133,7 +123,6 @@ function doBounce() {
   }, 1000 / 60);
 }
 
-// **Ermittelt den finalen Wert nach Stopp**
 function finalizeSpin() {
   let finalAngle = (angle % 360 + 360) % 360;
   const segCount = SEGMENT_VALUES.length;
@@ -144,9 +133,6 @@ function finalizeSpin() {
 
   const spinValue = SEGMENT_VALUES[idx];
   infoText.textContent = `Spin ${currentSpin} Ergebnis: ${spinValue}.`;
-
-  // Falls ein API-Call nötig ist, hier einfügen
-  // fetch('/api/spin', { method: 'POST' })
 
   if (currentSpin < 3) {
     setTimeout(() => {
@@ -162,9 +148,8 @@ function finalizeSpin() {
     }, 3000);
   } else {
     setTimeout(() => {
-      infoText.textContent = `3. Spin fertig. Gesamtpunkte könnten summiert werden.`;
-      spinBtn.disabled = false;
-      spinBtn.textContent = "Fertig / Logout";
+      infoText.textContent = `3. Spin fertig.`;
+      spinBtn.textContent = "Logout";
       spinBtn.removeEventListener('click', handleSpin);
       spinBtn.addEventListener('click', () => {
         location.href = '/auth/logout';
@@ -173,7 +158,6 @@ function finalizeSpin() {
   }
 }
 
-// **Button-Klick logik**
 function handleSpin() {
   if (currentSpin < 3) {
     if (!spinning && !stopping) {
@@ -181,24 +165,22 @@ function handleSpin() {
       spinBtn.textContent = 'Stop';
     } else if (spinning && !stopping) {
       stopSpin();
-      spinBtn.textContent = 'Start';
+      spinBtn.disabled = true;
     }
   } else if (currentSpin === 3) {
     if (!spinning && !stopping) {
       startSpin();
       spinBtn.disabled = true;
-      spinBtn.textContent = 'Spin 3 läuft...';
+      spinBtn.textContent = 'Stoppt automatisch';
       setTimeout(() => {
         stopSpin();
-      }, Math.random() * 4000 + 3000); // 3-7s zufälliger Auto-Stopp
+      }, Math.random() * 4000 + 3000);
     }
   }
 }
 
-// Event-Listener für den Button
 spinBtn.addEventListener('click', handleSpin);
 
-// **Initialisierung**
 infoText.textContent = `Spin ${currentSpin} bereit`;
 spinBtn.disabled = false;
 spinBtn.textContent = 'Start';
