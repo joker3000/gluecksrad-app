@@ -6,6 +6,7 @@ const { getAuthUrl, logout, ensureAuthenticated, pca } = require("./auth");
 
 const app = express();
 
+// Session-Management für Benutzer
 app.use(session({
     secret: "SUPER-SECRET-STRING",
     resave: false,
@@ -15,7 +16,7 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// ✅ API-Routen müssen vor statischen Dateien definiert sein
+// ✅ API-Routen müssen vor den statischen Dateien definiert sein!
 app.get("/auth/login", async (req, res) => {
     try {
         const authUrl = await getAuthUrl();
@@ -63,15 +64,6 @@ app.get("/auth/callback", async (req, res) => {
 
 app.get("/auth/logout", logout);
 
-// ✅ Spiel-Daten abrufen (z. B. Rad-Konfiguration für einen Spieler)
-app.get("/api/wheel-config", ensureAuthenticated, (req, res) => {
-    const player = db.prepare(`SELECT * FROM players WHERE oid=?`).get(req.session.account.oid);
-    if (!player) {
-        return res.status(404).json({ error: "Spieler nicht gefunden" });
-    }
-    res.json({ wheelConfig: JSON.parse(player.wheelConfig) });
-});
-
 // ✅ Spielergebnisse speichern (z. B. nach Spin)
 app.post("/api/spin", ensureAuthenticated, (req, res) => {
     const { spinNumber, score } = req.body;
@@ -91,7 +83,7 @@ app.post("/api/spin", ensureAuthenticated, (req, res) => {
     res.json({ success: true, totalScore: player.totalScore + score });
 });
 
-// ✅ Admin-Route mit echten Live-Daten aus der DB
+// ✅ Admin-Route mit Live-Daten aus der DB
 app.get("/api/admin", ensureAuthenticated, (req, res) => {
     if (req.session.account.username.toLowerCase() !== process.env.ADMIN_EMAIL.toLowerCase()) {
         return res.status(403).json({ error: "Forbidden" });
@@ -100,7 +92,16 @@ app.get("/api/admin", ensureAuthenticated, (req, res) => {
     res.json({ players });
 });
 
-// ✅ Statische Dateien bereitstellen (NACH den API-Routen!)
+// ✅ Spiel-Daten abrufen (z. B. Rad-Konfiguration für einen Spieler)
+app.get("/api/wheel-config", ensureAuthenticated, (req, res) => {
+    const player = db.prepare(`SELECT * FROM players WHERE oid=?`).get(req.session.account.oid);
+    if (!player) {
+        return res.status(404).json({ error: "Spieler nicht gefunden" });
+    }
+    res.json({ wheelConfig: JSON.parse(player.wheelConfig) });
+});
+
+// ✅ Statische Dateien zuletzt definieren
 app.use(express.static(path.join(__dirname, "public")));
 
 module.exports = app;
