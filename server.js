@@ -6,7 +6,7 @@ const { getAuthUrl, logout, ensureAuthenticated, pca } = require("./auth");
 
 const app = express();
 
-// ✅ Session-Management (muss vor API-Routen stehen)
+// ✅ Session-Management
 app.use(session({
     secret: "SUPER-SECRET-STRING",
     resave: false,
@@ -41,6 +41,7 @@ app.get("/auth/callback", async (req, res) => {
         // Prüfen, ob Spieler bereits existiert
         let player = db.prepare("SELECT * FROM players WHERE oid=?").get(tokenResponse.account.oid);
         if (!player) {
+            // Zufällige Rad-Konfiguration für neuen Spieler
             const wheelConfig = JSON.stringify([...Array(16).keys()].map(i => i * 50).sort(() => Math.random() - 0.5));
 
             db.prepare(`
@@ -109,7 +110,20 @@ app.post("/api/spin", ensureAuthenticatedAPI, (req, res) => {
     res.json({ success: true, totalScore: player.totalScore + score });
 });
 
-// ✅ Statische Dateien zuletzt definieren
+// ✅ Statische Dateien bereitstellen
 app.use(express.static(path.join(__dirname, "public")));
+
+// ✅ Sicherstellen, dass HTML-Seiten abrufbar sind
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+app.get("/game.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "game.html"));
+});
+
+app.get("/admin.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
 
 module.exports = app;
