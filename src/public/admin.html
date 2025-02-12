@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <h1>Admin Dashboard</h1>
+  <p>Nur du (ADMIN_EMAIL) darfst das sehen!</p>
+  <button onclick="location.href='/auth/logout'">Logout</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>OID</th>
+        <th>GivenName</th>
+        <th>FamilyName</th>
+        <th>DisplayName</th>
+        <th>Email</th>
+        <th>TotalScore</th>
+        <th>Spin1</th>
+        <th>Spin2</th>
+        <th>Spin3</th>
+      </tr>
+    </thead>
+    <tbody id="resultsTable"></tbody>
+  </table>
+
+  <script src="admin.js"></script>
+</body>
+</html>

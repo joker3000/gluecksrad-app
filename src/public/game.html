@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Dart-Glücksrad Spiel</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <h1>Dart-Glücksrad - Spiel</h1>
+  <p id="infoText">Wird geladen...</p>
+
+  <canvas id="wheel" width="400" height="400"></canvas>
+
+  <p>
+    <button id="wheelBtn" disabled>Start / Stop</button>
+  </p>
+
+  <p>
+    <button id="logoutBtn" onclick="location.href='/auth/logout'">Logout</button>
+  </p>
+
+  <script src="game.js"></script>
+</body>
+</html>
