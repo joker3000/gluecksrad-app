@@ -9,6 +9,7 @@
   "routes": [
     { "src": "/api/(.*)", "dest": "server.js" },
     { "src": "/auth/(.*)", "dest": "server.js" },
+    { "src": "/admin.html", "dest": "/public/admin.html" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }

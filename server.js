@@ -11,6 +11,7 @@ app.use(session({
     secret: "SUPER-SECRET-STRING",
     resave: false,
     saveUninitialized: false,
+    store: undefined, // Keine externe Speicherung erforderlich
     cookie: { secure: false }
 }));
 
@@ -108,6 +109,16 @@ app.post("/api/spin", ensureAuthenticated, (req, res) => {
         .run(score, score, req.session.account.id);
 
     res.json({ success: true });
+});
+
+// ✅ Admin-API (Liefert alle Spieler-Daten)
+app.get("/api/admin", ensureAuthenticated, (req, res) => {
+    if (req.session.account.mail !== process.env.ADMIN_EMAIL) {
+        return res.status(403).json({ error: "Nicht autorisiert" });
+    }
+
+    const players = db.prepare("SELECT * FROM players ORDER BY totalScore DESC").all();
+    res.json({ players });
 });
 
 // ✅ Statische Dateien bereitstellen (Vercel-kompatibel)
