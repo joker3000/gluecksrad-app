@@ -13,7 +13,7 @@ const store = new KnexSessionStore({
     knex: knex,
     tablename: "sessions",
     createTable: true,
-    clearInterval: 60000
+    clearInterval: 60000 // Alle 60 Sekunden veraltete Sessions löschen
 });
 
 app.use(session({
@@ -25,7 +25,7 @@ app.use(session({
         secure: false,
         httpOnly: true,
         sameSite: "lax",
-        maxAge: 24 * 60 * 60 * 1000
+        maxAge: 24 * 60 * 60 * 1000 // 24h Session
     }
 }));
 
@@ -44,7 +44,7 @@ app.get("/auth/login", async (req, res) => {
     }
 });
 
-// ✅ Fix für Auth-Callback
+// ✅ Fix für Auth-Callback mit stabiler Fehlerbehandlung
 app.get("/auth/callback", async (req, res) => {
     try {
         console.log("📢 Auth Callback aufgerufen mit Code:", req.query.code);
@@ -54,24 +54,39 @@ app.get("/auth/callback", async (req, res) => {
             return res.status(400).send("Fehler: Kein Auth-Code empfangen.");
         }
 
-        // 🔹 Authentifizierung bei Microsoft mit dem erhaltenen Code
-        const tokenResponse = await pca.acquireTokenByCode({
-            code: req.query.code,
-            scopes: ["User.Read"],
-            redirectUri: process.env.REDIRECT_URI
-        });
+        console.log("🔍 Versuche, Access-Token von Microsoft zu erhalten...");
+        let tokenResponse;
+        try {
+            tokenResponse = await pca.acquireTokenByCode({
+                code: req.query.code,
+                scopes: ["User.Read", "openid", "profile", "email", "offline_access"],
+                redirectUri: process.env.REDIRECT_URI
+            });
+        } catch (tokenErr) {
+            console.error("❌ Fehler beim Abrufen des Access-Tokens:", tokenErr);
+            if (tokenErr.errorCode === "invalid_grant") {
+                console.log("🔄 Erneute Anmeldung erforderlich.");
+                return res.redirect("/auth/login");
+            }
+            return res.status(500).send("Fehler: Microsoft Access-Token konnte nicht abgerufen werden.");
+        }
 
         if (!tokenResponse || !tokenResponse.accessToken) {
-            console.error("❌ Fehler: Kein Access-Token erhalten!");
-            return res.status(500).send("Fehler: Kein Access-Token.");
+            console.error("❌ Kein Access-Token erhalten!");
+            return res.status(500).send("Fehler: Kein Access-Token von Microsoft.");
         }
 
         console.log("✅ Access-Token erhalten!");
 
-        // 🔹 Microsoft Graph API aufrufen, um Benutzerinformationen zu erhalten
-        const graphResponse = await axios.get("https://graph.microsoft.com/v1.0/me", {
-            headers: { Authorization: `Bearer ${tokenResponse.accessToken}` }
-        });
+        let graphResponse;
+        try {
+            graphResponse = await axios.get("https://graph.microsoft.com/v1.0/me", {
+                headers: { Authorization: `Bearer ${tokenResponse.accessToken}` }
+            });
+        } catch (graphErr) {
+            console.error("❌ Fehler beim Abrufen der Microsoft-Benutzerdaten:", graphErr);
+            return res.status(500).send("Fehler: Microsoft Graph API konnte nicht erreicht werden.");
+        }
 
         if (!graphResponse || !graphResponse.data) {
             console.error("❌ Fehler: Keine Benutzerdaten von Microsoft erhalten!");
@@ -81,7 +96,6 @@ app.get("/auth/callback", async (req, res) => {
         const user = graphResponse.data;
         console.log("✅ Benutzerinformationen erhalten:", user);
 
-        // 🔹 Session speichern
         req.session.account = {
             id: user.id,
             displayName: user.displayName || "Unbekannt",
@@ -93,7 +107,6 @@ app.get("/auth/callback", async (req, res) => {
 
         console.log("✅ Session erfolgreich gespeichert:", req.session.account);
 
-        // 🔹 Benutzer in die Datenbank eintragen, falls noch nicht vorhanden
         let player = db.prepare("SELECT * FROM players WHERE id=?").get(user.id);
         if (!player) {
             const wheelConfig = JSON.stringify([...Array(16).keys()].map(i => i * 50).sort(() => Math.random() - 0.5));
@@ -114,7 +127,6 @@ app.get("/auth/callback", async (req, res) => {
             console.log("✅ Neuer Benutzer in der DB gespeichert.");
         }
 
-        // 🔹 Weiterleitung zum Spiel
         res.redirect("/game.html");
 
     } catch (err) {
@@ -128,6 +140,31 @@ app.get("/auth/logout", (req, res) => {
     req.session.destroy(() => {
         res.redirect("/");
     });
+});
+
+// ✅ API für das Glücksrad
+app.get("/api/wheel-config", ensureAuthenticated, (req, res) => {
+    const player = db.prepare("SELECT * FROM players WHERE id=?").get(req.session.account.id);
+    if (!player) {
+        return res.status(404).json({ error: "Spieler nicht gefunden" });
+    }
+    res.json({ wheelConfig: JSON.parse(player.wheelConfig) });
+});
+
+// ✅ API für Admin-Bereich
+app.get("/api/admin", ensureAuthenticated, async (req, res) => {
+    if (!req.session.account || req.session.account.mail !== process.env.ADMIN_EMAIL) {
+        console.log("🚫 Zugriff verweigert für", req.session.account ? req.session.account.mail : "Unbekannter Nutzer");
+        return res.status(403).json({ error: "Nicht autorisiert" });
+    }
+
+    try {
+        const players = await knex("players").orderBy("totalScore", "desc");
+        res.json({ players });
+    } catch (error) {
+        console.error("❌ Admin-Fehler:", error);
+        res.status(500).json({ error: "Fehler beim Abrufen der Admin-Daten" });
+    }
 });
 
 // ✅ Statische Dateien bereitstellen (Vercel-kompatibel)
