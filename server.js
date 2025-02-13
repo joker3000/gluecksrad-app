@@ -7,13 +7,13 @@ const knex = require("./knex");
 const db = require("./db");
 const msal = require("@azure/msal-node");
 
-// ✅ Sicherstellen, dass CLIENT_SECRET gesetzt ist
-if (!process.env.CLIENT_SECRET) {
-    console.error("❌ Fehler: CLIENT_SECRET ist nicht gesetzt!");
+// ✅ Prüfen, ob alle Umgebungsvariablen gesetzt sind
+if (!process.env.CLIENT_ID || !process.env.TENANT_ID || !process.env.CLIENT_SECRET) {
+    console.error("❌ FEHLER: CLIENT_ID, TENANT_ID oder CLIENT_SECRET fehlt in den Umgebungsvariablen!");
     process.exit(1);
 }
 
-// ✅ MSAL-Konfiguration mit Client Secret
+// ✅ Microsoft Auth Konfiguration
 const msalConfig = {
     auth: {
         clientId: process.env.CLIENT_ID,
@@ -30,6 +30,7 @@ const pca = new msal.ConfidentialClientApplication(msalConfig);
 
 const app = express();
 
+// ✅ Session-Store mit Knex für Vercel stabiler
 const store = new KnexSessionStore({
     knex: knex,
     tablename: "sessions",
@@ -53,6 +54,15 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// ✅ Middleware für Auth-Check
+function ensureAuthenticated(req, res, next) {
+    if (!req.session.account) {
+        console.log("🚫 Zugriff verweigert – Benutzer nicht eingeloggt.");
+        return res.status(401).json({ error: "Nicht eingeloggt" });
+    }
+    next();
+}
+
 // ✅ Microsoft Login
 app.get("/auth/login", async (req, res) => {
     try {
@@ -68,7 +78,7 @@ app.get("/auth/login", async (req, res) => {
     }
 });
 
-// ✅ Fix für Auth-Callback mit stabiler Fehlerbehandlung
+// ✅ Microsoft Auth Callback mit Fehlerbehandlung
 app.get("/auth/callback", async (req, res) => {
     try {
         console.log("📢 Auth Callback aufgerufen mit Code:", req.query.code);
@@ -126,26 +136,6 @@ app.get("/auth/callback", async (req, res) => {
         };
 
         console.log("✅ Session erfolgreich gespeichert:", req.session.account);
-
-        let player = db.prepare("SELECT * FROM players WHERE id=?").get(user.id);
-        if (!player) {
-            const wheelConfig = JSON.stringify([...Array(16).keys()].map(i => i * 50).sort(() => Math.random() - 0.5));
-
-            db.prepare(`
-                INSERT INTO players (id, displayName, mail, userPrincipalName, givenName, surname, wheelConfig)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `).run(
-                user.id,
-                user.displayName,
-                user.mail,
-                user.userPrincipalName,
-                user.givenName,
-                user.surname,
-                wheelConfig
-            );
-
-            console.log("✅ Neuer Benutzer in der DB gespeichert.");
-        }
 
         res.redirect("/game.html");
 
