@@ -1,203 +1,177 @@
 console.log("game.js loaded");
 
-// Elemente abrufen
+// Glücksrad-Elemente
 const spinBtn = document.getElementById("spinBtn");
 const infoText = document.getElementById("infoText");
-const spinResults = document.getElementById("spinResults");
-const result1 = document.getElementById("result1");
-const result2 = document.getElementById("result2");
-const result3 = document.getElementById("result3");
-const totalScoreElement = document.getElementById("totalScore");
-
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 
-let wheelConfig = []; // Speichert die zufällige Anordnung der Glücksrad-Zahlen
+let wheelConfig = []; // Glücksrad-Zahlen
 let angle = 0;
 let velocity = 0;
 let spinning = false;
 let stopping = false;
-let markerIndex = null;
-let currentSpin = 1;
-let totalScore = 0;
-let spinScores = [null, null, null];
+let markerIndex = null; // Speichert den Index des Endwerts
 
-// Glücksrad-Zahlen vom Server abrufen
-function fetchWheelConfig() {
-  fetch("/api/wheel-config")
-    .then(response => response.json())
-    .then(data => {
-      wheelConfig = data.wheelConfig;
-      console.log("Rad-Konfiguration:", wheelConfig);
-      drawWheel();
-    })
-    .catch(error => console.error("Fehler beim Laden des Rades:", error));
+// ✅ Das Rad wird animiert & aktualisiert sich kontinuierlich
+function animateWheel() {
+    if (spinning) {
+        angle += velocity;
+        velocity *= 0.99; // Verlangsamung des Spins
+        if (velocity < 0.01) {
+            velocity = 0;
+            spinning = false;
+            doBackBounce(); // ✅ Back-Bounce nach Stillstand
+        }
+    }
+    drawWheel();
+    requestAnimationFrame(animateWheel);
 }
 
-// Glücksrad zeichnen
+// ✅ Rad-Zeichnen mit aktueller Konfiguration & Markierung
 function drawWheel() {
-  ctx.clearRect(0, 0, 400, 400);
-  const segCount = wheelConfig.length;
-  const segAngle = 2 * Math.PI / segCount;
+    ctx.clearRect(0, 0, 400, 400);
+    const segCount = wheelConfig.length;
+    const segAngle = (2 * Math.PI) / segCount;
 
-  for (let i = 0; i < segCount; i++) {
-    ctx.beginPath();
-    ctx.moveTo(200, 200);
-    ctx.arc(200, 200, 200, i * segAngle, (i + 1) * segAngle);
-    ctx.fillStyle = randomColor(i);
-    ctx.fill();
-    ctx.stroke();
+    for (let i = 0; i < segCount; i++) {
+        ctx.beginPath();
+        ctx.moveTo(200, 200);
+        ctx.arc(200, 200, 200, i * segAngle, (i + 1) * segAngle);
+        ctx.fillStyle = randomColor(i);
+        ctx.fill();
+        ctx.stroke();
 
-    ctx.save();
-    ctx.translate(200, 200);
-    ctx.rotate(i * segAngle + segAngle / 2);
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "#000";
-    ctx.fillText(String(wheelConfig[i]), 130, 0);
-    ctx.restore();
-  }
+        // Nummern auf das Rad setzen
+        ctx.save();
+        ctx.translate(200, 200);
+        ctx.rotate(i * segAngle + segAngle / 2);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "#000";
+        ctx.fillText(String(wheelConfig[i]), 130, 0);
+        ctx.restore();
+    }
 
-  if (markerIndex !== null) {
-    ctx.save();
-    ctx.translate(200, 200);
-    ctx.rotate(markerIndex * segAngle + segAngle / 2);
-    ctx.beginPath();
-    ctx.arc(130, 0, 10, 0, 2 * Math.PI);
-    ctx.fillStyle = "red";
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "black";
-    ctx.stroke();
-    ctx.restore();
-  }
+    // ✅ Roten Punkt auf den Endwert setzen
+    if (markerIndex !== null) {
+        ctx.save();
+        ctx.translate(200, 200);
+        ctx.rotate(markerIndex * segAngle + segAngle / 2);
+        ctx.beginPath();
+        ctx.arc(130, 0, 10, 0, 2 * Math.PI); // Roter Punkt hinter der Zahl
+        ctx.fillStyle = "red";
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "black";
+        ctx.stroke();
+        ctx.restore();
+    }
 }
 
-// Zufällige Farben für Segmente
+// ✅ Zufällige Farben für Segmente
 function randomColor(i) {
-  const colors = ["red", "blue", "green", "orange", "purple", "yellow", "cyan", "pink"];
-  return colors[i % colors.length];
+    const colors = ["red", "blue", "green", "orange", "purple", "yellow", "cyan", "pink"];
+    return colors[i % colors.length];
 }
 
-// Spin starten
+// ✅ API: Rad-Konfiguration abrufen
+function fetchWheelConfig() {
+    fetch("/api/wheel-config")
+        .then(response => response.json())
+        .then(data => {
+            wheelConfig = data.wheelConfig;
+            console.log("Rad-Konfiguration:", wheelConfig);
+            drawWheel();
+        })
+        .catch(error => console.error("Fehler beim Laden des Rades:", error));
+}
+
+// ✅ Spin-Start-Logik mit zufälliger Geschwindigkeit
 function startSpin() {
-  if (spinning || stopping) return;
-  spinning = true;
-  velocity = Math.random() * 3 + 3;
-  infoText.textContent = `Spin ${currentSpin} läuft...`;
-  markerIndex = null;
-  spinBtn.textContent = "Stop";
+    if (spinning || stopping) return;
+    spinning = true;
+    velocity = Math.random() * 3 + 3; // Zufällige Geschwindigkeit
+    infoText.textContent = "Dreht...";
+    spinBtn.textContent = "Stop";
+    markerIndex = null; // Lösche Markierung vor Spin
 }
 
-// Spin stoppen
+// ✅ Spin-Stopp-Logik mit realistischem Abbremsen
 function stopSpin() {
-  if (!spinning || stopping) return;
-  stopping = true;
-  spinBtn.disabled = true;
-  const initVelocity = velocity;
-  const steps = 60 * 3;
-  let step = 0;
+    if (!spinning || stopping) return;
+    stopping = true;
+    const slowDownSteps = 60 * 3; // 3 Sekunden Verzögerung
+    let step = 0;
 
-  const slowDown = setInterval(() => {
-    step++;
-    velocity = initVelocity * (1 - step / steps);
-    if (step >= steps) {
-      clearInterval(slowDown);
-      velocity = 0;
-      doBounce();
-    }
-  }, 1000 / 60);
+    const slowDown = setInterval(() => {
+        step++;
+        velocity *= 0.95;
+        if (velocity < 0.05) {
+            clearInterval(slowDown);
+            velocity = 0;
+            spinning = false;
+            doBackBounce(); // ✅ Führe Back-Bounce aus
+        }
+    }, 1000 / 60);
 }
 
-// Back-Bounce für realistisches Stoppen (-5°)
-function doBounce() {
-  stopping = true;
-  const steps = 30;
-  let step = 0;
-  const bounceAngle = 5;
+// ✅ Back-Bounce (-5° Rückfedern nach Stillstand)
+function doBackBounce() {
+    stopping = true;
+    const steps = 30;
+    let step = 0;
+    const bounceAngle = 5; // Rücksprung um 5°
 
-  const bounce = setInterval(() => {
-    step++;
-    angle -= bounceAngle / steps;
-    if (step >= steps) {
-      clearInterval(bounce);
-      spinning = false;
-      stopping = false;
-      finalizeSpin();
-    }
-  }, 1000 / 60);
+    const bounce = setInterval(() => {
+        step++;
+        angle -= bounceAngle / steps;
+        if (step >= steps) {
+            clearInterval(bounce);
+            finalizeSpin(); // ✅ Endgültiges Ergebnis nach Bounce bestimmen
+        }
+    }, 1000 / 60);
 }
 
-// Finales Ergebnis berechnen
+// ✅ Berechnung des finalen Wertes nach dem Back-Bounce
 function finalizeSpin() {
-  let finalAngle = (angle % 360 + 360) % 360;
-  const segCount = wheelConfig.length;
-  const segAngle = 360 / segCount;
-  let idx = Math.floor(finalAngle / segAngle);
-  if (idx >= segCount) idx = segCount - 1;
-  markerIndex = idx;
+    const segmentAngle = (2 * Math.PI) / wheelConfig.length;
+    let index = Math.floor(((angle % (2 * Math.PI)) / segmentAngle) % wheelConfig.length);
+    let result = wheelConfig[index];
 
-  const spinValue = wheelConfig[idx];
-  spinScores[currentSpin - 1] = spinValue;
-  totalScore = spinScores.reduce((a, b) => a + (b || 0), 0);
-  updateSpinResults();
+    // ✅ Speichere die Markierung für den Endwert
+    markerIndex = index;
 
-  infoText.textContent = `Spin ${currentSpin} Ergebnis: ${spinValue}.`;
+    infoText.textContent = `Ergebnis: ${result}`;
+    spinBtn.textContent = "Erneut Drehen";
+    spinning = false;
+    stopping = false;
 
-  if (currentSpin < 3) {
-    setTimeout(() => {
-      currentSpin++;
-      angle = 0;
-      velocity = 0;
-      spinning = false;
-      stopping = false;
-      spinBtn.disabled = false;
-      spinBtn.textContent = "Start";
-      infoText.textContent = `Spin ${currentSpin} bereit`;
-      markerIndex = null;
-    }, 3000);
-  } else {
-    setTimeout(() => {
-      infoText.textContent = `Spiel beendet. Deine Gesamtpunkte: ${totalScore}`;
-      spinBtn.textContent = "Logout";
-      spinBtn.removeEventListener("click", handleSpin);
-      spinBtn.addEventListener("click", () => {
-        location.href = "/auth/logout";
-      });
-    }, 3000);
-  }
+    // ✅ Speichert den Spin beim Server (falls notwendig)
+    saveSpinResult(result);
 }
 
-// Spin-Button-Logik
-function handleSpin() {
-  if (currentSpin < 3) {
+// ✅ Spin-Ergebnis speichern (an den Server senden)
+function saveSpinResult(score) {
+    fetch("/api/spin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spinNumber: 1, score }) // Der Spin-Zähler müsste mitgeführt werden
+    })
+    .then(response => response.json())
+    .then(data => console.log("Ergebnis gespeichert:", data))
+    .catch(error => console.error("Fehler beim Speichern des Spins:", error));
+}
+
+// ✅ Event-Listener für Spin-Button
+spinBtn.addEventListener("click", () => {
     if (!spinning && !stopping) {
-      startSpin();
-      spinBtn.textContent = "Stop";
+        startSpin();
     } else if (spinning && !stopping) {
-      stopSpin();
-      spinBtn.disabled = true;
-    }
-  } else if (currentSpin === 3) {
-    if (!spinning && !stopping) {
-      startSpin();
-      spinBtn.disabled = true;
-      spinBtn.textContent = "Stoppt automatisch";
-      setTimeout(() => {
         stopSpin();
-      }, Math.random() * 4000 + 3000);
     }
-  }
-}
+});
 
-spinBtn.addEventListener("click", handleSpin);
-
-// Spin-Ergebnisse anzeigen
-function updateSpinResults() {
-  result1.textContent = spinScores[0] !== null ? spinScores[0] : "-";
-  result2.textContent = spinScores[1] !== null ? spinScores[1] : "-";
-  result3.textContent = spinScores[2] !== null ? spinScores[2] : "-";
-  totalScoreElement.textContent = totalScore;
-}
-
+// ✅ Starte Animation & lade Rad-Daten
 fetchWheelConfig();
+animateWheel();
