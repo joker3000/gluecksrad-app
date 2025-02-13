@@ -9,29 +9,31 @@ const { getAuthUrl, logout, ensureAuthenticated, pca } = require("./auth");
 
 const app = express();
 
-// ✅ Session-Store mit Knex für Vercel stabiler
 const store = new KnexSessionStore({
     knex: knex,
     tablename: "sessions",
     createTable: true,
-    clearInterval: 60000 // Alle 60 Sekunden veraltete Sessions löschen
+    clearInterval: 60000
 });
 
 app.use(session({
     secret: "SUPER-SECRET-STRING",
-    resave: true, // 🔥 Fix: Session auch speichern, wenn keine Änderung
-    saveUninitialized: true, // 🔥 Fix: Uninitialisierte Sessions trotzdem speichern
+    resave: true,
+    saveUninitialized: true,
     store: store,
     cookie: {
-        secure: false, // 🔥 Falls HTTPS nicht erzwungen ist (Vercel sollte trotzdem HTTPS nutzen)
+        secure: false,
         httpOnly: true,
-        sameSite: "lax", // 🔥 Fix für Vercel, damit Cookies in allen Requests gültig sind
-        maxAge: 24 * 60 * 60 * 1000 // 24h Session
+        sameSite: "lax",
+        maxAge: 24 * 60 * 60 * 1000
     }
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// ✅ Statische Dateien bereitstellen (Fix für 404)
+app.use(express.static(path.join(__dirname, "public")));
 
 // ✅ Microsoft Login
 app.get("/auth/login", async (req, res) => {
@@ -135,10 +137,9 @@ app.get("/api/admin", ensureAuthenticated, async (req, res) => {
     }
 });
 
-// ✅ Statische Dateien bereitstellen (Vercel-kompatibel)
-app.use(express.static(path.join(__dirname, "public")));
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
-app.get("/game.html", (req, res) => res.sendFile(path.join(__dirname, "public", "game.html")));
-app.get("/admin.html", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
+// ✅ Fallback für unbekannte Routen (404 Fix)
+app.use((req, res) => {
+    res.status(404).send("404 - Seite nicht gefunden");
+});
 
 module.exports = app;
