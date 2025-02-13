@@ -16,7 +16,7 @@ let velocity = 0;
 let spinning = false;
 let stopping = false;
 let markerIndex = null;
-let currentSpinNumber = 1;
+let currentSpin = 1;
 let totalScore = 0;
 let spinScores = [null, null, null];
 
@@ -32,7 +32,7 @@ function fetchWheelConfig() {
         .catch(error => console.error("Fehler beim Laden des Rades:", error));
 }
 
-// ✅ Das Rad wird animiert & bleibt sichtbar in Bewegung
+// ✅ Animation für das Glücksrad
 function animateWheel() {
     if (spinning) {
         angle += velocity;
@@ -61,7 +61,7 @@ function drawWheel() {
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.arc(0, 0, 200, i * segAngle, (i + 1) * segAngle);
-        ctx.fillStyle = randomColor(i);
+        ctx.fillStyle = ["red", "blue", "green", "orange"][i % 4];
         ctx.fill();
         ctx.stroke();
 
@@ -92,22 +92,16 @@ function drawWheel() {
     }
 }
 
-// ✅ Zufällige Farben für die Segmente
-function randomColor(i) {
-    const colors = ["red", "blue", "green", "orange", "purple", "yellow", "cyan", "pink"];
-    return colors[i % colors.length];
-}
-
 // ✅ Spin starten
 function startSpin() {
     if (spinning || stopping) return;
     spinning = true;
     velocity = Math.random() * 4 + 3;
-    infoText.textContent = `Spin ${currentSpinNumber} läuft...`;
+    infoText.textContent = `Spin ${currentSpin} läuft...`;
     spinBtn.textContent = "Stop";
     spinBtn.disabled = false;
 
-    if (currentSpinNumber === 3) {
+    if (currentSpin === 3) {
         spinBtn.textContent = "Letzter Spin (Auto-Stop)";
         spinBtn.disabled = true; 
         setTimeout(stopSpin, Math.random() * 4000 + 3000);
@@ -155,16 +149,16 @@ function finalizeSpin() {
     let result = wheelConfig[index];
 
     markerIndex = index;
-    spinScores[currentSpinNumber - 1] = result;
+    spinScores[currentSpin - 1] = result;
 
     totalScore = spinScores.reduce((a, b) => a + (b || 0), 0);
     updateSpinResults();
     saveSpinResult(result);
 
-    infoText.textContent = `Spin ${currentSpinNumber}: ${result}`;
-    currentSpinNumber++;
+    infoText.textContent = `Spin ${currentSpin}: ${result}`;
+    currentSpin++;
 
-    if (currentSpinNumber > 3) {
+    if (currentSpin > 3) {
         spinBtn.textContent = "Spiel beendet";
         spinBtn.disabled = true;
     } else {
@@ -186,7 +180,7 @@ function saveSpinResult(score) {
     fetch("/api/spin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ spinNumber: currentSpinNumber - 1, score })
+        body: JSON.stringify({ spinNumber: currentSpin - 1, score })
     })
     .then(response => response.json())
     .then(data => {
