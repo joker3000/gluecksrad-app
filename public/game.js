@@ -40,7 +40,7 @@ function animateWheel() {
         if (velocity < 0.02) {
             velocity = 0;
             spinning = false;
-            doBackBounce(); 
+            doBackBounce();
         }
     }
     drawWheel();
@@ -105,6 +105,7 @@ function startSpin() {
     velocity = Math.random() * 4 + 3;
     infoText.textContent = `Spin ${currentSpin} läuft...`;
     spinBtn.textContent = "Stop";
+    spinBtn.disabled = false;
 
     // ✅ Falls Spin 3, Auto-Stop aktivieren
     if (currentSpin === 3) {
@@ -126,7 +127,7 @@ function stopSpin() {
             clearInterval(slowDown);
             velocity = 0;
             spinning = false;
-            doBackBounce(); 
+            doBackBounce();
         }
     }, 1000 / 60);
 }
@@ -136,14 +137,14 @@ function doBackBounce() {
     stopping = true;
     const steps = 30;
     let step = 0;
-    const bounceAngle = 5; 
+    const bounceAngle = 5;
 
     const bounce = setInterval(() => {
         step++;
         angle -= bounceAngle / steps;
         if (step >= steps) {
             clearInterval(bounce);
-            finalizeSpin(); 
+            finalizeSpin();
         }
     }, 1000 / 60);
 }
@@ -169,7 +170,7 @@ function finalizeSpin() {
         spinBtn.disabled = true;
     } else {
         spinBtn.textContent = "Erneut Drehen";
-        spinBtn.disabled = false; 
+        spinBtn.disabled = false;
     }
 }
 
