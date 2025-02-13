@@ -1,31 +1,29 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8"/>
-  <title>Dart-Glücksrad - Spiel</title>
-  <link rel="stylesheet" href="/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dart-Glücksrad</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Dart-Glücksrad - Spiel</h1>
-  
-  <!-- Anzeige für den aktuellen Status -->
-  <div id="infoText">Spin 1 bereit</div>
+    <h1>Dart-Glücksrad</h1>
+    
+    <div id="infoText">Bereit zum Drehen!</div>
 
-  <!-- Spin-Ergebnisse -->
-  <div id="spinResults">
-    <p>Spin 1: <span id="result1">-</span></p>
-    <p>Spin 2: <span id="result2">-</span></p>
-    <p>Spin 3: <span id="result3">-</span></p>
-    <p><strong>Gesamtpunkte: <span id="totalScore">0</span></strong></p>
-  </div>
+    <div class="game-container">
+        <canvas id="wheel" width="400" height="400"></canvas>
+        <button id="spinBtn">Start</button>
+    </div>
 
-  <!-- Glücksrad -->
-  <canvas id="wheel" width="400" height="400"></canvas>
+    <div id="spinResults">
+        <h2>Zwischenergebnisse</h2>
+        <p>Spin 1: <span id="result1">-</span></p>
+        <p>Spin 2: <span id="result2">-</span></p>
+        <p>Spin 3: <span id="result3">-</span></p>
+        <p><strong>Gesamtpunkte: <span id="totalScore">0</span></strong></p>
+    </div>
 
-  <!-- Steuerung -->
-  <p><button id="spinBtn">Start</button></p>
-  <p><button id="logoutBtn" onclick="location.href='/auth/logout'">Logout</button></p>
-
-  <script src="game.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>

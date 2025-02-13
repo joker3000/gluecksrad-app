@@ -1,96 +1,148 @@
+/* Allgemeine Stile */
 body {
-  font-family: 'Segoe UI', Tahoma, sans-serif;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-color: #f4f4f4;
   margin: 0;
   padding: 0;
-  background: linear-gradient(135deg, #ece9e6, #ffffff);
-  text-align: center;
 }
 
+/* Titel */
 h1 {
-  margin: 20px;
-  font-size: 2rem;
+  color: #333;
+  margin-top: 20px;
+}
+
+/* Info-Text */
+#infoText {
+  font-size: 18px;
+  margin: 15px;
+  font-weight: bold;
+  color: #555;
+}
+
+/* Spiel-Container */
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+/* Glücksrad-Stil */
+canvas {
+  border: 4px solid black;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Spin-Button */
+button {
+  margin-top: 15px;
+  padding: 12px 24px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  transition: 0.3s;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+
+/* Zwischenergebnisse */
+#spinResults {
+  margin-top: 20px;
+  font-size: 20px;
+  font-weight: bold;
   color: #333;
 }
 
-.btn-main {
-  background: #009688;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  margin: 10px;
-  cursor: pointer;
-  border-radius: 4px;
-  font-size: 1rem;
-  transition: background 0.3s;
-}
-.btn-main:hover {
-  background: #00796b;
+#spinResults h2 {
+  font-size: 22px;
+  color: #222;
+  margin-bottom: 10px;
 }
 
-.register-area {
-  margin: 20px auto;
-  display: inline-block;
-  background: #f2f2f2;
-  border-radius: 6px;
-  padding: 15px 25px;
-  box-shadow: 0 0 8px rgba(0,0,0,0.1);
-}
-.register-area input {
-  margin: 5px;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-label {
-  margin-right: 6px;
-  font-weight: 500;
-}
-
-.info-text {
-  font-size: 1.1rem;
-  margin-bottom: 20px;
-  color: #444;
-}
-
-canvas {
-  border: 2px solid #555;
-  display: block;
-  margin: 0 auto 20px;
-  background: #fff;
-  box-shadow: 0 0 4px rgba(0,0,0,0.2);
-}
-
-.score-board {
-  display: inline-block;
-  text-align: left;
-  background: #f7f7f7;
-  border-radius: 4px;
-  padding: 10px 20px;
-  box-shadow: 0 0 4px rgba(0,0,0,0.1);
-}
-.score-board p {
+#spinResults p {
+  font-size: 18px;
   margin: 5px 0;
 }
 
-/* Admin style */
-table {
-  margin: 20px auto;
-  border-collapse: collapse;
-  width: 80%;
-  max-width: 800px;
-  background: #fafafa;
-  box-shadow: 0 0 6px rgba(0,0,0,0.1);
+#totalScore {
+  font-size: 24px;
+  font-weight: bold;
+  color: #E44D26;
 }
-table th, table td {
-  padding: 15px 20px;
-  border: 1px solid #ccc;
+
+/* ------------------------------------- */
+/* Admin-Bereich Tabellenansicht */
+/* ------------------------------------- */
+
+.admin-container {
+  width: 90%;
+  margin: 20px auto;
   text-align: center;
 }
-table thead {
-  background: #009688;
-  color: white;
+
+/* Tabellen-Stil */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background-color: white;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  overflow: hidden;
 }
-table thead th {
-  font-weight: 600;
+
+/* Tabellenkopf */
+th {
+  background-color: #4CAF50;
+  color: white;
+  padding: 12px;
+  text-transform: uppercase;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Alternierende Zeilenfarben */
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+/* Tabellenzellen */
+td {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Tabellen-Zellen im Hover */
+tr:hover {
+  background-color: #f1f1f1;
+}
+
+/* Responsive Tabelle */
+@media screen and (max-width: 800px) {
+  table {
+      font-size: 14px;
+  }
+  th, td {
+      padding: 8px;
+  }
 }
