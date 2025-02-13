@@ -12,7 +12,9 @@ const app = express();
 // ✅ Session-Store mit Knex für Vercel stabiler
 const store = new KnexSessionStore({
     knex: knex,
-    tablename: "sessions"
+    tablename: "sessions",
+    createTable: true,
+    clearInterval: 60000 // Alle 60 Sekunden veraltete Sessions löschen
 });
 
 app.use(session({
@@ -20,7 +22,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     store: store,
-    cookie: { secure: false }
+    cookie: { secure: false, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 } // 24h Session
 }));
 
 app.use(express.json());
@@ -30,6 +32,7 @@ app.use(express.urlencoded({ extended: false }));
 app.get("/auth/login", async (req, res) => {
     try {
         const authUrl = await getAuthUrl();
+        console.log("🔄 Redirecting to Microsoft Login:", authUrl);
         res.redirect(authUrl);
     } catch (err) {
         console.error("❌ Login-Fehler:", err);
@@ -61,6 +64,8 @@ app.get("/auth/callback", async (req, res) => {
             givenName: user.givenName || "Unbekannt",
             surname: user.surname || "Unbekannt"
         };
+
+        console.log(`✅ Erfolgreich eingeloggt als ${user.displayName} (${user.mail})`);
 
         let player = db.prepare("SELECT * FROM players WHERE id=?").get(userId);
         if (!player) {
@@ -121,7 +126,8 @@ app.post("/api/spin", ensureAuthenticated, (req, res) => {
 
 // ✅ Admin-API funktioniert jetzt mit `knex`
 app.get("/api/admin", ensureAuthenticated, async (req, res) => {
-    if (req.session.account.mail !== process.env.ADMIN_EMAIL) {
+    if (!req.session.account || req.session.account.mail !== process.env.ADMIN_EMAIL) {
+        console.log("🚫 Zugriff verweigert für", req.session.account ? req.session.account.mail : "Unbekannter Nutzer");
         return res.status(403).json({ error: "Nicht autorisiert" });
     }
 
