@@ -1,15 +1,16 @@
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
-const db = require("./db");
+const knex = require("./knex"); // ✅ Importiere Knex
 const KnexSessionStore = require("connect-session-knex")(session);
+const db = require("./db");
 const { getAuthUrl, logout, ensureAuthenticated, pca } = require("./auth");
 
 const app = express();
 
-// ✅ Fix: Stabiler Session-Store mit SQLite für Vercel
+// ✅ Fix: Stabiler Session-Store mit Knex.js & SQLite für Vercel
 const store = new KnexSessionStore({
-    knex: db,
+    knex: knex,  // ✅ Hier übergeben wir jetzt eine echte Knex-Instanz!
     tablename: "sessions"
 });
 
@@ -24,7 +25,7 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// ✅ Fix: Middleware für API-Authentifizierung verbessert
+// ✅ API-Authentifizierung sicherstellen
 function ensureAuthenticatedAPI(req, res, next) {
     if (!req.session.account) {
         return res.status(401).json({ error: "Nicht eingeloggt", redirect: "/auth/login" });
@@ -32,7 +33,7 @@ function ensureAuthenticatedAPI(req, res, next) {
     next();
 }
 
-// ✅ Microsoft Login
+// ✅ Auth-Routen für Microsoft Login
 app.get("/auth/login", async (req, res) => {
     try {
         const authUrl = await getAuthUrl();
