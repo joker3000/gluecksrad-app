@@ -19,10 +19,15 @@ const store = new KnexSessionStore({
 
 app.use(session({
     secret: "SUPER-SECRET-STRING",
-    resave: false,
-    saveUninitialized: false,
+    resave: true, // 🔥 Fix: Session auch speichern, wenn keine Änderung
+    saveUninitialized: true, // 🔥 Fix: Uninitialisierte Sessions trotzdem speichern
     store: store,
-    cookie: { secure: false, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 } // 24h Session
+    cookie: {
+        secure: false, // 🔥 Falls HTTPS nicht erzwungen ist (Vercel sollte trotzdem HTTPS nutzen)
+        httpOnly: true,
+        sameSite: "lax", // 🔥 Fix für Vercel, damit Cookies in allen Requests gültig sind
+        maxAge: 24 * 60 * 60 * 1000 // 24h Session
+    }
 }));
 
 app.use(express.json());
@@ -84,6 +89,8 @@ app.get("/auth/callback", async (req, res) => {
                 wheelConfig
             );
         }
+
+        console.log("✅ Session gespeichert:", req.session.account);
         res.redirect("/game.html");
     } catch (err) {
         console.error("❌ Auth-Callback Fehler:", err);
@@ -99,6 +106,11 @@ app.get("/auth/logout", (req, res) => {
 
 // ✅ API für das Glücksrad
 app.get("/api/wheel-config", ensureAuthenticated, (req, res) => {
+    console.log("📢 /api/wheel-config Session:", req.session.account);
+    if (!req.session.account) {
+        return res.status(401).json({ error: "Nicht eingeloggt" });
+    }
+
     const player = db.prepare("SELECT * FROM players WHERE id=?").get(req.session.account.id);
     if (!player) {
         return res.status(404).json({ error: "Spieler nicht gefunden" });
@@ -106,26 +118,9 @@ app.get("/api/wheel-config", ensureAuthenticated, (req, res) => {
     res.json({ wheelConfig: JSON.parse(player.wheelConfig) });
 });
 
-// ✅ API für Spin-Speicherung
-app.post("/api/spin", ensureAuthenticated, (req, res) => {
-    const { spinNumber, score } = req.body;
-    if (!spinNumber || score === undefined) {
-        return res.status(400).json({ error: "Ungültige Daten" });
-    }
-
-    const player = db.prepare("SELECT * FROM players WHERE id=?").get(req.session.account.id);
-    if (!player) {
-        return res.status(404).json({ error: "Spieler nicht gefunden" });
-    }
-
-    db.prepare(`UPDATE players SET spin${spinNumber} = ?, totalScore = totalScore + ? WHERE id = ?`)
-        .run(score, score, req.session.account.id);
-
-    res.json({ success: true });
-});
-
-// ✅ Admin-API funktioniert jetzt mit `knex`
+// ✅ API für Admin-Bereich mit Session-Debugging
 app.get("/api/admin", ensureAuthenticated, async (req, res) => {
+    console.log("📢 /api/admin Session:", req.session.account);
     if (!req.session.account || req.session.account.mail !== process.env.ADMIN_EMAIL) {
         console.log("🚫 Zugriff verweigert für", req.session.account ? req.session.account.mail : "Unbekannter Nutzer");
         return res.status(403).json({ error: "Nicht autorisiert" });
