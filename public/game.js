@@ -10,7 +10,6 @@ const totalPointsDisplay = document.getElementById("totalPoints");
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 
-// SPIELZUSTAND
 let wheelConfig = [];
 let angle = 0;
 let velocity = 0;
@@ -190,7 +189,14 @@ function saveSpinResult(score) {
         body: JSON.stringify({ spinNumber: currentSpinNumber - 1, score })
     })
     .then(response => response.json())
-    .then(data => console.log("Ergebnis gespeichert:", data))
+    .then(data => {
+        console.log("Ergebnis gespeichert:", data);
+        if (data.success) {
+            console.log("Spin erfolgreich in der DB gespeichert!");
+        } else {
+            console.error("Fehler beim Speichern:", data.error);
+        }
+    })
     .catch(error => console.error("Fehler beim Speichern des Spins:", error));
 }
 
