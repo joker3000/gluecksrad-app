@@ -2,30 +2,37 @@ const express = require("express");
 const session = require("express-session");
 const path = require("path");
 const db = require("./db");
+const KnexSessionStore = require("connect-session-knex")(session);
 const { getAuthUrl, logout, ensureAuthenticated, pca } = require("./auth");
 
 const app = express();
 
-// ✅ Session-Management für Authentifizierung & API-Calls
+// ✅ Fix: Stabiler Session-Store mit SQLite für Vercel
+const store = new KnexSessionStore({
+    knex: db,
+    tablename: "sessions"
+});
+
 app.use(session({
     secret: "SUPER-SECRET-STRING",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } // Für HTTPS setzen auf `true`
+    store: store,
+    cookie: { secure: false, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 } // 24h Session
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// ✅ Middleware für API-Authentifizierung
+// ✅ Fix: Middleware für API-Authentifizierung verbessert
 function ensureAuthenticatedAPI(req, res, next) {
     if (!req.session.account) {
-        return res.status(401).json({ error: "Nicht eingeloggt" });
+        return res.status(401).json({ error: "Nicht eingeloggt", redirect: "/auth/login" });
     }
     next();
 }
 
-// ✅ Auth-Routen für Microsoft Login
+// ✅ Microsoft Login
 app.get("/auth/login", async (req, res) => {
     try {
         const authUrl = await getAuthUrl();
@@ -46,10 +53,8 @@ app.get("/auth/callback", async (req, res) => {
 
         req.session.account = tokenResponse.account;
 
-        // Prüfen, ob Spieler bereits existiert
         let player = db.prepare("SELECT * FROM players WHERE oid=?").get(tokenResponse.account.oid);
         if (!player) {
-            // Zufällige Rad-Konfiguration für neuen Spieler speichern
             const wheelConfig = JSON.stringify([...Array(16).keys()].map(i => i * 50).sort(() => Math.random() - 0.5));
 
             db.prepare(`
@@ -71,9 +76,13 @@ app.get("/auth/callback", async (req, res) => {
     }
 });
 
-app.get("/auth/logout", logout);
+app.get("/auth/logout", (req, res) => {
+    req.session.destroy(() => {
+        res.redirect("/");
+    });
+});
 
-// ✅ Admin-Panel API (Live-Spieler-Daten)
+// ✅ Admin-Panel API
 app.get("/api/admin", ensureAuthenticatedAPI, (req, res) => {
     if (req.session.account.username.toLowerCase() !== process.env.ADMIN_EMAIL.toLowerCase()) {
         return res.status(403).json({ error: "Forbidden" });
@@ -82,7 +91,7 @@ app.get("/api/admin", ensureAuthenticatedAPI, (req, res) => {
     res.json({ players });
 });
 
-// ✅ FIX: Route für Glücksrad-Konfiguration pro Spieler
+// ✅ Fix für API-Fehler 404 /api/wheel-config
 app.get("/api/wheel-config", ensureAuthenticatedAPI, (req, res) => {
     const player = db.prepare("SELECT * FROM players WHERE oid=?").get(req.session.account.oid);
     if (!player) {
@@ -91,7 +100,7 @@ app.get("/api/wheel-config", ensureAuthenticatedAPI, (req, res) => {
     res.json({ wheelConfig: JSON.parse(player.wheelConfig) });
 });
 
-// ✅ Spielergebnisse speichern
+// ✅ Spiel-API (Punkte speichern)
 app.post("/api/spin", ensureAuthenticatedAPI, (req, res) => {
     const { spinNumber, score } = req.body;
     if (!spinNumber || score === undefined) {
