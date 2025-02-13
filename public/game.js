@@ -32,15 +32,15 @@ function fetchWheelConfig() {
         .catch(error => console.error("Fehler beim Laden des Rades:", error));
 }
 
-// ✅ Das Rad wird animiert
+// ✅ Das Rad wird animiert (Drehung sichtbar)
 function animateWheel() {
     if (spinning) {
         angle += velocity;
-        velocity *= 0.99; // Bremsen
-        if (velocity < 0.01) {
+        velocity *= 0.98;
+        if (velocity < 0.02) {
             velocity = 0;
             spinning = false;
-            doBackBounce(); // ✅ Back-Bounce nach Stillstand
+            doBackBounce(); 
         }
     }
     drawWheel();
@@ -53,16 +53,19 @@ function drawWheel() {
     const segCount = wheelConfig.length;
     const segAngle = (2 * Math.PI) / segCount;
 
+    ctx.save();
+    ctx.translate(200, 200);
+    ctx.rotate(angle);
+
     for (let i = 0; i < segCount; i++) {
         ctx.beginPath();
-        ctx.moveTo(200, 200);
-        ctx.arc(200, 200, 200, i * segAngle, (i + 1) * segAngle);
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, 200, i * segAngle, (i + 1) * segAngle);
         ctx.fillStyle = randomColor(i);
         ctx.fill();
         ctx.stroke();
 
         ctx.save();
-        ctx.translate(200, 200);
         ctx.rotate(i * segAngle + segAngle / 2);
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
@@ -70,6 +73,8 @@ function drawWheel() {
         ctx.fillText(String(wheelConfig[i]), 130, 0);
         ctx.restore();
     }
+
+    ctx.restore();
 
     // ✅ Roter Punkt für Endwert setzen
     if (markerIndex !== null) {
@@ -93,17 +98,25 @@ function randomColor(i) {
     return colors[i % colors.length];
 }
 
-// ✅ Spin starten
+// ✅ Spin starten (Spin 1-3)
 function startSpin() {
     if (spinning || stopping) return;
     spinning = true;
     velocity = Math.random() * 4 + 3;
-    infoText.textContent = "Dreht...";
+    infoText.textContent = `Spin ${currentSpin} läuft...`;
     spinBtn.textContent = "Stop";
+
+    // ✅ Falls Spin 3, Auto-Stop aktivieren
+    if (currentSpin === 3) {
+        spinBtn.textContent = "Letzter Spin (Auto-Stop)";
+        spinBtn.disabled = true; 
+        setTimeout(stopSpin, Math.random() * 4000 + 3000);
+    }
+
     markerIndex = null;
 }
 
-// ✅ Spin stoppen
+// ✅ Spin stoppen (nur für Spin 1 & 2 manuell)
 function stopSpin() {
     if (!spinning || stopping) return;
     stopping = true;
@@ -113,7 +126,7 @@ function stopSpin() {
             clearInterval(slowDown);
             velocity = 0;
             spinning = false;
-            doBackBounce(); // ✅ Führe Back-Bounce aus
+            doBackBounce(); 
         }
     }, 1000 / 60);
 }
@@ -123,14 +136,14 @@ function doBackBounce() {
     stopping = true;
     const steps = 30;
     let step = 0;
-    const bounceAngle = 5; // Rücksprung um 5°
+    const bounceAngle = 5; 
 
     const bounce = setInterval(() => {
         step++;
         angle -= bounceAngle / steps;
         if (step >= steps) {
             clearInterval(bounce);
-            finalizeSpin(); // ✅ Endgültiges Ergebnis nach Bounce bestimmen
+            finalizeSpin(); 
         }
     }, 1000 / 60);
 }
@@ -141,7 +154,6 @@ function finalizeSpin() {
     let index = Math.floor(((angle % (2 * Math.PI)) / segmentAngle) % wheelConfig.length);
     let result = wheelConfig[index];
 
-    // ✅ Speichere die Markierung für den Endwert
     markerIndex = index;
     spinScores[currentSpin - 1] = result;
 
@@ -151,11 +163,13 @@ function finalizeSpin() {
     infoText.textContent = `Spin ${currentSpin}: ${result}`;
     currentSpin++;
 
+    // ✅ Falls Spiel zu Ende ist
     if (currentSpin > 3) {
         spinBtn.textContent = "Spiel beendet";
         spinBtn.disabled = true;
     } else {
         spinBtn.textContent = "Erneut Drehen";
+        spinBtn.disabled = false; 
     }
 }
 
