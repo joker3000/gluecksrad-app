@@ -1,16 +1,16 @@
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
-const knex = require("./knex"); // ✅ Importiere Knex
+const knex = require("./knex"); // ✅ Knex.js für Sessions
 const KnexSessionStore = require("connect-session-knex")(session);
 const db = require("./db");
 const { getAuthUrl, logout, ensureAuthenticated, pca } = require("./auth");
 
 const app = express();
 
-// ✅ Fix: Stabiler Session-Store mit Knex.js & SQLite für Vercel
+// ✅ Stabiler Session-Store mit Knex.js & SQLite für Vercel
 const store = new KnexSessionStore({
-    knex: knex,  // ✅ Hier übergeben wir jetzt eine echte Knex-Instanz!
+    knex: knex,
     tablename: "sessions"
 });
 
@@ -25,7 +25,7 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// ✅ API-Authentifizierung sicherstellen
+// ✅ Middleware für API-Authentifizierung
 function ensureAuthenticatedAPI(req, res, next) {
     if (!req.session.account) {
         return res.status(401).json({ error: "Nicht eingeloggt", redirect: "/auth/login" });
@@ -33,7 +33,7 @@ function ensureAuthenticatedAPI(req, res, next) {
     next();
 }
 
-// ✅ Auth-Routen für Microsoft Login
+// ✅ Microsoft Login
 app.get("/auth/login", async (req, res) => {
     try {
         const authUrl = await getAuthUrl();
@@ -52,27 +52,48 @@ app.get("/auth/callback", async (req, res) => {
             redirectUri: process.env.REDIRECT_URI
         });
 
-        req.session.account = tokenResponse.account;
+        if (!tokenResponse.account || !tokenResponse.account.oid) {
+            console.error("❌ Fehler: Microsoft hat keine OID geliefert!");
+            return res.status(500).send("Fehler: OID fehlt im Microsoft-Konto.");
+        }
 
-        let player = db.prepare("SELECT * FROM players WHERE oid=?").get(tokenResponse.account.oid);
+        const oid = tokenResponse.account.oid;
+        const givenName = tokenResponse.account.givenName || "Unbekannt";
+        const familyName = tokenResponse.account.familyName || "Unbekannt";
+        const displayName = tokenResponse.account.displayName || `${givenName} ${familyName}`;
+        const username = tokenResponse.account.username || `user_${oid}`;
+
+        console.log(`✅ Login erfolgreich: ${displayName} (${username})`);
+
+        req.session.account = {
+            oid,
+            givenName,
+            familyName,
+            displayName,
+            username
+        };
+
+        let player = db.prepare("SELECT * FROM players WHERE oid=?").get(oid);
         if (!player) {
+            console.log(`ℹ️ Neuer Spieler: ${displayName}`);
+
             const wheelConfig = JSON.stringify([...Array(16).keys()].map(i => i * 50).sort(() => Math.random() - 0.5));
 
             db.prepare(`
                 INSERT INTO players (oid, givenName, familyName, displayName, username, wheelConfig)
                 VALUES (?, ?, ?, ?, ?, ?)
             `).run(
-                tokenResponse.account.oid,
-                tokenResponse.account.givenName || "",
-                tokenResponse.account.familyName || "",
-                tokenResponse.account.displayName || "",
-                tokenResponse.account.username || "",
+                oid,
+                givenName,
+                familyName,
+                displayName,
+                username,
                 wheelConfig
             );
         }
         res.redirect("/game.html");
     } catch (err) {
-        console.error("Callback-Fehler:", err);
+        console.error("❌ Auth-Callback Fehler:", err);
         res.status(500).send("Fehler beim Auth-Callback.");
     }
 });
@@ -92,7 +113,7 @@ app.get("/api/admin", ensureAuthenticatedAPI, (req, res) => {
     res.json({ players });
 });
 
-// ✅ Fix für API-Fehler 404 /api/wheel-config
+// ✅ `/api/wheel-config`-Route sicherstellen
 app.get("/api/wheel-config", ensureAuthenticatedAPI, (req, res) => {
     const player = db.prepare("SELECT * FROM players WHERE oid=?").get(req.session.account.oid);
     if (!player) {
