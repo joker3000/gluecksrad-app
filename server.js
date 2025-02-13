@@ -7,6 +7,13 @@ const knex = require("./knex");
 const db = require("./db");
 const msal = require("@azure/msal-node");
 
+// ✅ Sicherstellen, dass CLIENT_SECRET gesetzt ist
+if (!process.env.CLIENT_SECRET) {
+    console.error("❌ Fehler: CLIENT_SECRET ist nicht gesetzt!");
+    process.exit(1);
+}
+
+// ✅ MSAL-Konfiguration mit Client Secret
 const msalConfig = {
     auth: {
         clientId: process.env.CLIENT_ID,
@@ -27,7 +34,7 @@ const store = new KnexSessionStore({
     knex: knex,
     tablename: "sessions",
     createTable: true,
-    clearInterval: 60000 // Alle 60 Sekunden veraltete Sessions löschen
+    clearInterval: 60000
 });
 
 app.use(session({
@@ -39,7 +46,7 @@ app.use(session({
         secure: false,
         httpOnly: true,
         sameSite: "lax",
-        maxAge: 24 * 60 * 60 * 1000 // 24h Session
+        maxAge: 24 * 60 * 60 * 1000
     }
 }));
 
