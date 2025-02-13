@@ -1,6 +1,6 @@
 console.log("game.js loaded");
 
-// Elemente abrufen
+// HTML-Elemente abrufen
 const spinBtn = document.getElementById("spinBtn");
 const infoText = document.getElementById("infoText");
 const spin1Display = document.getElementById("spin1");
@@ -10,6 +10,7 @@ const totalPointsDisplay = document.getElementById("totalPoints");
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 
+// Spiellogik Variablen
 let wheelConfig = [];
 let angle = 0;
 let velocity = 0;
@@ -36,7 +37,7 @@ function fetchWheelConfig() {
 function animateWheel() {
     if (spinning) {
         angle += velocity;
-        velocity *= 0.98; // Leichteres Bremsen
+        velocity *= 0.98; // Bremsfaktor
         if (velocity < 0.02) {
             velocity = 0;
             spinning = false;
@@ -61,7 +62,7 @@ function drawWheel() {
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.arc(0, 0, 200, i * segAngle, (i + 1) * segAngle);
-        ctx.fillStyle = ["red", "blue", "green", "orange"][i % 4];
+        ctx.fillStyle = ["red", "blue", "green", "orange", "purple", "yellow", "cyan", "pink"][i % 8];
         ctx.fill();
         ctx.stroke();
 
@@ -103,7 +104,7 @@ function startSpin() {
 
     if (currentSpin === 3) {
         spinBtn.textContent = "Letzter Spin (Auto-Stop)";
-        spinBtn.disabled = true; 
+        spinBtn.disabled = true;
         setTimeout(stopSpin, Math.random() * 4000 + 3000);
     }
 
