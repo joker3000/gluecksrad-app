@@ -3,6 +3,7 @@ const session = require("express-session");
 const path = require("path");
 const knex = require("./knex"); // ✅ Knex.js für Sessions
 const KnexSessionStore = require("connect-session-knex")(session);
+const { v4: uuidv4 } = require("uuid"); // ✅ Importiere UUID-Modul
 const db = require("./db");
 const { getAuthUrl, logout, ensureAuthenticated, pca } = require("./auth");
 
@@ -52,16 +53,12 @@ app.get("/auth/callback", async (req, res) => {
             redirectUri: process.env.REDIRECT_URI
         });
 
-        if (!tokenResponse.account || !tokenResponse.account.oid) {
-            console.error("❌ Fehler: Microsoft hat keine OID geliefert!");
-            return res.status(500).send("Fehler: OID fehlt im Microsoft-Konto.");
-        }
-
-        const oid = tokenResponse.account.oid;
-        const givenName = tokenResponse.account.givenName || "Unbekannt";
-        const familyName = tokenResponse.account.familyName || "Unbekannt";
-        const displayName = tokenResponse.account.displayName || `${givenName} ${familyName}`;
-        const username = tokenResponse.account.username || `user_${oid}`;
+        // ✅ Falls Microsoft keine OID liefert, erstelle eine UUID
+        let oid = tokenResponse.account?.oid || uuidv4();
+        const givenName = tokenResponse.account?.givenName || "Unbekannt";
+        const familyName = tokenResponse.account?.familyName || "Unbekannt";
+        const displayName = tokenResponse.account?.displayName || `${givenName} ${familyName}`;
+        const username = tokenResponse.account?.username || `user_${oid}`;
 
         console.log(`✅ Login erfolgreich: ${displayName} (${username})`);
 
