@@ -5,7 +5,21 @@ const axios = require("axios");
 const KnexSessionStore = require("connect-session-knex")(session);
 const knex = require("./knex");
 const db = require("./db");
-const { getAuthUrl, logout, ensureAuthenticated, pca } = require("./auth");
+const msal = require("@azure/msal-node");
+
+const msalConfig = {
+    auth: {
+        clientId: process.env.CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${process.env.TENANT_ID}`,
+        clientSecret: process.env.CLIENT_SECRET
+    },
+    system: {
+        telemetry: {
+            disabled: true // ✅ Microsoft-Telemetrie deaktivieren
+        }
+    }
+};
+const pca = new msal.ConfidentialClientApplication(msalConfig);
 
 const app = express();
 
@@ -35,7 +49,10 @@ app.use(express.urlencoded({ extended: false }));
 // ✅ Microsoft Login
 app.get("/auth/login", async (req, res) => {
     try {
-        const authUrl = await getAuthUrl();
+        const authUrl = await pca.getAuthCodeUrl({
+            scopes: ["User.Read", "openid", "profile", "email", "offline_access"],
+            redirectUri: process.env.REDIRECT_URI
+        });
         console.log("🔄 Redirecting to Microsoft Login:", authUrl);
         res.redirect(authUrl);
     } catch (err) {
@@ -64,11 +81,7 @@ app.get("/auth/callback", async (req, res) => {
             });
         } catch (tokenErr) {
             console.error("❌ Fehler beim Abrufen des Access-Tokens:", tokenErr);
-            if (tokenErr.errorCode === "invalid_grant") {
-                console.log("🔄 Erneute Anmeldung erforderlich.");
-                return res.redirect("/auth/login");
-            }
-            return res.status(500).send("Fehler: Microsoft Access-Token konnte nicht abgerufen werden.");
+            return res.redirect("/auth/login");
         }
 
         if (!tokenResponse || !tokenResponse.accessToken) {
@@ -154,7 +167,6 @@ app.get("/api/wheel-config", ensureAuthenticated, (req, res) => {
 // ✅ API für Admin-Bereich
 app.get("/api/admin", ensureAuthenticated, async (req, res) => {
     if (!req.session.account || req.session.account.mail !== process.env.ADMIN_EMAIL) {
-        console.log("🚫 Zugriff verweigert für", req.session.account ? req.session.account.mail : "Unbekannter Nutzer");
         return res.status(403).json({ error: "Nicht autorisiert" });
     }
 
