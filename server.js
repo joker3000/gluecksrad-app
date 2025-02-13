@@ -2,16 +2,24 @@ const express = require("express");
 const session = require("express-session");
 const path = require("path");
 const axios = require("axios");
+const KnexSessionStore = require("connect-session-knex")(session);
+const knex = require("./knex");
 const db = require("./db");
 const { getAuthUrl, logout, ensureAuthenticated, pca } = require("./auth");
 
 const app = express();
 
+// ✅ Session-Store mit Knex für Vercel stabiler
+const store = new KnexSessionStore({
+    knex: knex,
+    tablename: "sessions"
+});
+
 app.use(session({
     secret: "SUPER-SECRET-STRING",
     resave: false,
     saveUninitialized: false,
-    store: undefined, // Keine externe Speicherung erforderlich
+    store: store,
     cookie: { secure: false }
 }));
 
@@ -111,14 +119,19 @@ app.post("/api/spin", ensureAuthenticated, (req, res) => {
     res.json({ success: true });
 });
 
-// ✅ Admin-API (Liefert alle Spieler-Daten)
-app.get("/api/admin", ensureAuthenticated, (req, res) => {
+// ✅ Admin-API funktioniert jetzt mit `knex`
+app.get("/api/admin", ensureAuthenticated, async (req, res) => {
     if (req.session.account.mail !== process.env.ADMIN_EMAIL) {
         return res.status(403).json({ error: "Nicht autorisiert" });
     }
 
-    const players = db.prepare("SELECT * FROM players ORDER BY totalScore DESC").all();
-    res.json({ players });
+    try {
+        const players = await knex("players").orderBy("totalScore", "desc");
+        res.json({ players });
+    } catch (error) {
+        console.error("❌ Admin-Fehler:", error);
+        res.status(500).json({ error: "Fehler beim Abrufen der Admin-Daten" });
+    }
 });
 
 // ✅ Statische Dateien bereitstellen (Vercel-kompatibel)
