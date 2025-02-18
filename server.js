@@ -10,33 +10,33 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Hilfsfunktionen
 function getPlayerId(firstname, lastname) {
-  const row = db.prepare(`
+  const row = db.execute(`
     SELECT id FROM players
     WHERE firstname=? AND lastname=? LIMIT 1
   `).get(firstname, lastname);
   return row ? row.id : null;
 }
 function createPlayer(firstname, lastname) {
-  const info = db.prepare(`
+  const info = db.execute(`
     INSERT INTO players (firstname, lastname)
     VALUES (?, ?)
   `).run(firstname, lastname);
   return info.lastInsertRowid;
 }
 function getSpin(playerId, spinNumber) {
-  return db.prepare(`
+  return db.execute(`
     SELECT * FROM spins
     WHERE player_id=? AND spin_number=?
   `).get(playerId, spinNumber);
 }
 function createSpin(playerId, spinNumber, distribution) {
-  db.prepare(`
+  db.execute(`
     INSERT INTO spins (player_id, spin_number, distribution)
     VALUES (?, ?, ?)
   `).run(playerId, spinNumber, JSON.stringify(distribution));
 }
 function updateSpinResult(spinId, finalAngle, finalValue) {
-  db.prepare(`
+  db.execute(`
     UPDATE spins
     SET spin_angle=?, spin_value=?
     WHERE id=?
@@ -74,7 +74,7 @@ app.post('/api/register', (req, res)=>{
   }
 
   // Laden => total
-  const allSpins= db.prepare(`
+  const allSpins= db.execute(`
     SELECT * FROM spins
     WHERE player_id=?
     ORDER BY spin_number
@@ -127,7 +127,7 @@ app.post('/api/spinResult',(req,res)=>{
   updateSpinResult(spin.id, finalAngle, finalValue);
 
   // total
-  const allSpins= db.prepare(`SELECT * FROM spins WHERE player_id=?`).all(playerId);
+  const allSpins= db.execute(`SELECT * FROM spins WHERE player_id=?`).all(playerId);
   let total=0;
   for(const s of allSpins){
     if(s.spin_value!==null) total+= s.spin_value;
@@ -147,9 +147,9 @@ app.post('/api/admin/login', (req,res)=>{
 
 // /api/admin/players
 app.get('/api/admin/players',(req,res)=>{
-  const players= db.prepare(`SELECT * FROM players`).all();
+  const players= db.execute(`SELECT * FROM players`).all();
   let resultRows= players.map(p=>{
-    const spins= db.prepare(`SELECT * FROM spins WHERE player_id=?`).all(p.id);
+    const spins= db.execute(`SELECT * FROM spins WHERE player_id=?`).all(p.id);
     let total=0;
     const spinValues=[null,null,null];
     for(const s of spins){
