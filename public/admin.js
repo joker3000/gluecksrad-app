@@ -23,7 +23,7 @@ function adminLogin() {
         loginArea.style.display='none';
         dashboard.style.display='block';
         loadPlayers();
-        setInterval(loadPlayers, 5000);
+        setInterval(loadPlayers, 2500);
       }
     })
     .catch(err=>{
