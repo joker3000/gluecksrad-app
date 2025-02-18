@@ -169,6 +169,7 @@ app.get("/api/admin/players", async (req, res) => {
             }
 
             return {
+                id: p.id, // ✅ Ensure ID is included!
                 firstname: p.firstname,
                 lastname: p.lastname,
                 spin1: spinValues[0],
@@ -183,7 +184,7 @@ app.get("/api/admin/players", async (req, res) => {
 
     } catch (error) {
         console.error("Error loading admin data:", error);
-        res.status(500).json({ error: "Datenbankfehler" });
+        res.status(500).json({ error: "Database error" });
     }
 });
 
