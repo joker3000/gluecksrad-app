@@ -1,11 +1,8 @@
-const path = require('path');
-const Database = require('better-sqlite3');
+const { createClient } = require("@libsql/client");
 
-const dbPath = process.env.VERCEL
-  ? path.join('/tmp', 'gluecksrad.db')
-  : 'gluecksrad.db';
-
-const db = new Database(dbPath);
+const db = createClient({
+  url: process.env.DATABASE_URL, // Get Turso DB URL from Vercel env
+});
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS players (
