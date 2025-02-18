@@ -1,17 +1,21 @@
+/* General Styles */
 body {
   font-family: 'Segoe UI', Tahoma, sans-serif;
   margin: 0;
   padding: 0;
   background: linear-gradient(135deg, #ece9e6, #ffffff);
   text-align: center;
+  overflow-x: hidden; /* Prevents horizontal scrolling */
 }
 
+/* Headings */
 h1 {
   margin: 20px;
   font-size: 2rem;
   color: #333;
 }
 
+/* Buttons */
 .btn-main {
   background: #009688;
   color: white;
@@ -22,11 +26,16 @@ h1 {
   border-radius: 4px;
   font-size: 1rem;
   transition: background 0.3s;
+  display: inline-block;
+  width: 90%;
+  max-width: 300px;
 }
+
 .btn-main:hover {
   background: #00796b;
 }
 
+/* Register Area */
 .register-area {
   margin: 20px auto;
   display: inline-block;
@@ -34,33 +43,46 @@ h1 {
   border-radius: 6px;
   padding: 15px 25px;
   box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  max-width: 90%;
 }
+
 .register-area input {
+  width: calc(100% - 20px);
+  max-width: 280px;
   margin: 5px;
-  padding: 8px;
+  padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
 
+/* Labels */
 label {
   margin-right: 6px;
   font-weight: 500;
+  display: block;
 }
 
+/* Info Text */
 .info-text {
   font-size: 1.1rem;
   margin-bottom: 20px;
   color: #444;
+  padding: 0 10px;
 }
 
+/* Glücksrad Canvas */
 canvas {
   border: 2px solid #555;
   display: block;
   margin: 0 auto 20px;
   background: #fff;
   box-shadow: 0 0 4px rgba(0,0,0,0.2);
+  width: 100%;
+  max-width: 400px;
+  height: auto;
 }
 
+/* Score Board */
 .score-board {
   display: inline-block;
   text-align: left;
@@ -68,29 +90,60 @@ canvas {
   border-radius: 4px;
   padding: 10px 20px;
   box-shadow: 0 0 4px rgba(0,0,0,0.1);
+  width: 90%;
+  max-width: 400px;
 }
+
 .score-board p {
   margin: 5px 0;
 }
 
-/* Admin style */
+/* Admin Styles */
 table {
   margin: 20px auto;
   border-collapse: collapse;
-  width: 80%;
+  width: 95%;
   max-width: 800px;
   background: #fafafa;
   box-shadow: 0 0 6px rgba(0,0,0,0.1);
 }
+
 table th, table td {
-  padding: 15px 20px;
+  padding: 12px;
   border: 1px solid #ccc;
   text-align: center;
 }
+
 table thead {
   background: #009688;
   color: white;
 }
+
 table thead th {
   font-weight: 600;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+  h1 {
+    font-size: 1.8rem;
+  }
+
+  .register-area {
+    padding: 12px 20px;
+  }
+
+  .btn-main {
+    font-size: 1rem;
+    padding: 14px 0;
+  }
+
+  canvas {
+    width: 90%;
+    height: auto;
+  }
+
+  table th, table td {
+    padding: 10px;
+  }
 }
