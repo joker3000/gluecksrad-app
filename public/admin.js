@@ -46,7 +46,7 @@ function loadPlayers() {
           <td>${p.spin3 === null ? '' : p.spin3}</td>
           <td><strong>${p.total}</strong></td>
           <td>
-            <button class="delete-btn" onclick="confirmDelete(${p.id}, '${p.firstname}', '${p.lastname}')">X</button>
+            <button class="delete-btn" onclick="confirmDelete('${p.id}', '${p.firstname}', '${p.lastname}')">X</button>
           </td>
         `;
         resultsTable.appendChild(tr);
@@ -56,6 +56,11 @@ function loadPlayers() {
 }
 
 function confirmDelete(playerId, firstname, lastname) {
+  if (!playerId) {
+    alert("Fehler: Spieler-ID fehlt!");
+    return;
+  }
+
   const confirmation = confirm(`Bist du sicher, dass du ${firstname} ${lastname} löschen möchtest?`);
   if (confirmation) {
     deletePlayer(playerId);
@@ -63,6 +68,11 @@ function confirmDelete(playerId, firstname, lastname) {
 }
 
 function deletePlayer(playerId) {
+  if (!playerId) {
+    alert("Fehler: Ungültige Spieler-ID!");
+    return;
+  }
+
   fetch(`/api/admin/delete/${playerId}`, { method: 'DELETE' })
     .then(r => r.json())
     .then(data => {
