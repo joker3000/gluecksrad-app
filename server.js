@@ -187,6 +187,19 @@ app.get("/api/admin/players", async (req, res) => {
     }
 });
 
+// 📌 Delete a Player
+app.delete("/api/admin/delete/:id", async (req, res) => {
+    const playerId = req.params.id;
+    try {
+        await db.execute("DELETE FROM spins WHERE player_id = ?", [playerId]);
+        await db.execute("DELETE FROM players WHERE id = ?", [playerId]);
+        res.json({ message: "Player deleted!" });
+    } catch (error) {
+        console.error("Error deleting player:", error);
+        res.status(500).json({ error: "Delete failed" });
+    }
+});
+
 // 📌 Fallback Route
 app.use((req, res) => {
     res.status(404).send("Not found");
